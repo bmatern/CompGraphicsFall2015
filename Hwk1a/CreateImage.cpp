@@ -15,6 +15,8 @@
 #include <vector>
 using namespace std;
 
+//PointType can double as a vector too.  It's just numbers.  Let's be reasonable.
+//It's not the same as a c++ vector.  Or a virology vector.  How confusing.
 typedef struct
 {
 	float x,y,z;
@@ -38,7 +40,46 @@ typedef struct
 	ColorType color;
 } SphereType;
 
-string trim(string& str)
+typedef struct
+{
+	PointType topLeft;
+	PointType topRight;
+	PointType botLeft;
+	PointType botRight;
+} ViewingWindowType;
+
+PointType crossProduct(PointType firstVector, PointType secondVector)
+{
+	//u x v = 
+		// (uy * vz - uz * vy 
+		//, uz * vx - ux * vz 
+		//, ux * vy - uy * vx)
+	PointType results;
+	results.x = (firstVector.y * secondVector.z) - (firstVector.z * secondVector.y);
+	results.y = (firstVector.z * secondVector.x) - (firstVector.x * secondVector.z);
+	results.z = (firstVector.x * secondVector.y) - (firstVector.y * secondVector.x);
+	return results;
+}
+
+PointType multiplyVector(PointType inputVector, float scalar)
+{
+	PointType results;	
+	results.x = inputVector.x * scalar;
+	results.y = inputVector.y * scalar;
+	results.z = inputVector.z * scalar;	
+	return results;
+}
+
+float vectorLength(PointType inputVector)
+{
+	//sqrt(x^2 + y^2 + z^2)
+	return sqrt(inputVector.x * inputVector.x
+		+ inputVector.y * inputVector.y
+		+ inputVector.z * inputVector.z);
+}
+
+
+string trim(string str)
 {
 	//cout << "trimming:" << str <<"\n";
 	size_t first = str.find_first_not_of(' ');
@@ -48,7 +89,7 @@ string trim(string& str)
     return result;
 }
 
-vector<string> tokenizeString(string& input)
+vector<string> tokenizeString(string input)
 {
 	vector<string> tokens;
 	int spaceLocation;
@@ -83,22 +124,28 @@ vector<string> tokenizeString(string& input)
 	return tokens;
 }
 
-
 int main( int argc, char *argv[] )
 {
 	cout << "Creating a new image.\n";
 
+//Declare all the important variables I'll need
 	int width;
 	int height;
 	
 	RayType eyeRay;	
-	RayType upVector;
+	
+	PointType upVector;
+	PointType u;
+	PointType v;	
+	
 	ColorType bgColor;
 	ColorType currentMaterialColor;
 	
 	vector<SphereType> spheres;
 	
 	float fovH;
+	
+	ViewingWindowType viewingWindow;
 
 	string inputFileName;
 	string outputFileName;
@@ -126,6 +173,7 @@ int main( int argc, char *argv[] )
 	string line;
 
 	//TODO This should be dynamic for inputFileName passed in.  Instead of text literal.  IDK.  Pointers?
+	//Maybe I need to do a *symbol to dereference something.  I don't know.
 	ifstream myInputfile ("example_input.txt");
 	if (myInputfile.is_open())
 	{
@@ -159,13 +207,9 @@ int main( int argc, char *argv[] )
 					}
 					else if(inputVarName.compare("updir") == 0)
 					{
-				
-						upVector.origin.x =	0; 
-						upVector.origin.y = 0;
-						upVector.origin.z = 0;
-						upVector.direction.x = stof(tokens[1]);
-						upVector.direction.y = stof(tokens[2]);
-						upVector.direction.z = stof(tokens[3]);
+						upVector.x = stof(tokens[1]);
+						upVector.y = stof(tokens[2]);
+						upVector.z = stof(tokens[3]);
 					
 					}
 					else if(inputVarName.compare("fovh") == 0)
@@ -205,7 +249,7 @@ int main( int argc, char *argv[] )
 					}
 					else
 					{
-						cout << "What else????\n";
+						cout << "Something's wrong.  Unidentified input:" << inputVarName << "\n";
 					}
 				}
 				else
@@ -219,7 +263,7 @@ int main( int argc, char *argv[] )
 	}
     else
     {
-    	//Defaults.  
+    	//TODO: Defaults.   Probably need to default a few more things here.
     	width = 100;
     	height = 100;
     	cout << "Unable to open input file. Using default image size values.\n";
@@ -229,9 +273,22 @@ int main( int argc, char *argv[] )
 
 
 
-	cout << "How many spheres?" << spheres.size() << "\n";
-	cout << "sphere 3 x" << spheres[2].center.x << "\n";
-	cout << "sphere 3 r" << spheres[2].color.r << "\n";
+//Initialize pixel array for output image
+	ColorType pixelArray [width][height]; 
+
+//Perform necessary preliminary calculations.
+	//I think this is where I define the viewing window?
+	//Yeah I need the u and v vectors.  And the corners of the viewing window.
+	
+	//the u vector is the unit vector orthogonal to the viewing direction and the up direction.
+	// u' is the non-normalized u vector.
+	// view_dir x up_dir = u'
+	// u = u'/ ||u'||	
+	PointType uPrime = crossProduct(eyeRay.direction , upVector);
+	float uNormalizeScalar = 1.0 / vectorLength(uPrime);
+	u = multiplyVector(uPrime, uNormalizeScalar);
+	
+	//v is a unit vector
 
 
 
@@ -241,6 +298,22 @@ int main( int argc, char *argv[] )
 
 
 
+//foreach pixel in image array:
+	for(int y = 0; y < height; y++)
+	{
+		for(int x = 0; x < width; x++)
+		{
+			ColorType currentPixel;
+			currentPixel.r = 3;
+			currentPixel.r = 4;
+			currentPixel.r = 200;
+			pixelArray [x][y] = currentPixel;
+			//call trace_ray() with appropriate parameters
+			//Use value returend by trace_ray to update pixel colors.
+		}
+	}
+	
+	
 
 
 
@@ -264,17 +337,9 @@ int main( int argc, char *argv[] )
 	{
 		for(int x = 0; x < width ; x++)
 		{
-			//Red and blue values are calculated to form a gradient.
-			//Red increases with the X value, to a maximum of 255.
-			//Blue increases with the Y value, to a maximum of 255.
-			string r = to_string((255.0 * x) / width) + " ";
-			string b = to_string((255.0 * y) / height) + " ";
-
-			//I decided to calculate green based on a repeating pattern every 10 pixels.
-			//Every set of 10 pixels horizontally has a green value of either 0 or 150.
-			//Looks real ugly that way.
-			bool isOdd = ((x/10) % 2==1);
-			string g = isOdd?("0 "):"150 ";
+			string r = to_string(pixelArray[x][y].r) + " ";
+			string b = to_string(pixelArray[x][y].b) + " ";
+			string g = to_string(pixelArray[x][y].g) + " ";
 			myfile << r << g << b;
 		}
 		//We just finished a row of pixels.
