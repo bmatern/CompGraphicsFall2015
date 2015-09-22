@@ -13,6 +13,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <math.h>
 using namespace std;
 
 //PointType can double as a vector too.  It's just numbers.  Let's be reasonable.
@@ -48,6 +49,16 @@ typedef struct
 	PointType botRight;
 } ViewingWindowType;
 
+float dotProduct(PointType firstVector, PointType secondVector)
+{
+	//s = x1 x2 + y1 y2 + z1 z2
+	float results = 
+		firstVector.x * secondVector.x +
+		firstVector.y * secondVector.y +
+		firstVector.z * secondVector.z;
+	return results;
+}
+
 PointType crossProduct(PointType firstVector, PointType secondVector)
 {
 	//u x v = 
@@ -58,6 +69,15 @@ PointType crossProduct(PointType firstVector, PointType secondVector)
 	results.x = (firstVector.y * secondVector.z) - (firstVector.z * secondVector.y);
 	results.y = (firstVector.z * secondVector.x) - (firstVector.x * secondVector.z);
 	results.z = (firstVector.x * secondVector.y) - (firstVector.y * secondVector.x);
+	return results;
+}
+
+PointType addVectors(PointType firstVector, PointType secondVector)
+{
+	PointType results;
+	results.x = firstVector.x + secondVector.x;
+	results.y = firstVector.y + secondVector.y;
+	results.z = firstVector.z + secondVector.z;
 	return results;
 }
 
@@ -78,6 +98,12 @@ float vectorLength(PointType inputVector)
 		+ inputVector.z * inputVector.z);
 }
 
+PointType normalizeVector(PointType inputVector)
+{
+	float normalizeScalar = 1.0 / vectorLength(inputVector);
+	PointType results = multiplyVector(inputVector, normalizeScalar);
+	return results;
+}
 
 string trim(string str)
 {
@@ -107,7 +133,6 @@ vector<string> tokenizeString(string input)
 				tokens.push_back(tokenBuffer);
 			}
 			//cout << "End of tokens.\n";
-
 			break;
 		}
 		else
@@ -129,22 +154,30 @@ int main( int argc, char *argv[] )
 	cout << "Creating a new image.\n";
 
 //Declare all the important variables I'll need
-	int width;
-	int height;
+	
+	//This width and height are in pixels.
+	int width, height;
+	
+	//d, w, h are in world coordinates
+	//d = distance from eye to window.  w=width window, h = height window.
+	float d, w, h;
 	
 	RayType eyeRay;	
 	
 	PointType upVector;
 	PointType u;
 	PointType v;	
+	PointType n;
 	
 	ColorType bgColor;
 	ColorType currentMaterialColor;
 	
 	vector<SphereType> spheres;
 	
+	//The angle of the horizontal field of view.  Theta.
 	float fovH;
 	
+	//contains 4 points for the coordinates of the viewing window.
 	ViewingWindowType viewingWindow;
 
 	string inputFileName;
@@ -285,12 +318,54 @@ int main( int argc, char *argv[] )
 	// view_dir x up_dir = u'
 	// u = u'/ ||u'||	
 	PointType uPrime = crossProduct(eyeRay.direction , upVector);
-	float uNormalizeScalar = 1.0 / vectorLength(uPrime);
-	u = multiplyVector(uPrime, uNormalizeScalar);
+	u = normalizeVector(uPrime);
 	
-	//v is a unit vector
-
-
+	//v is a unit vector orthogonal to both the viewing direction and u.
+	PointType vPrime = crossProduct(u , eyeRay.direction);
+	v = normalizeVector(vPrime);
+	
+	// d is an arbitrary viewing distance, from eye to viewing window.  It is in world coordinates.
+	d = 1.0;
+	// w is the width of the viewing window.  In 3d world coordinate units.
+	// I need to calculate w based on the tangent of fovH and d.  Algebra and trig yield this equation:
+	// w = 2 * d * tan (fovH / 2)
+	w = 2.0 * d * tan (fovH / 2);
+	// calculate h, in world coordinates.  Use the aspect ratio calculated from the width and height in pixels.
+	h = w * height / width ;
+	
+	//n is the normalized view direction vector
+	n = normalizeVector(eyeRay.direction);
+	
+	//each of these calculations are one point + 3 vectors.
+	//This results in a point (well, 4 points)
+	//ul = view_origin + d⋅n + h/2⋅v – w/2⋅u
+	//ur = view_origin + d⋅n + h/2⋅v + w/2⋅u
+	//ll = view_origin + d⋅n – h/2⋅v – w/2⋅u
+	//lr = view_origin + d⋅n – h/2⋅v + w/2⋅u
+	viewingWindow.topLeft = addVectors(addVectors(addVectors(
+		eyeRay.origin 
+		, multiplyVector(n, d))
+		, multiplyVector(v, h/2))
+		, multiplyVector(u, -w/2));		
+	viewingWindow.topRight = addVectors(addVectors(addVectors(
+		eyeRay.origin 
+		, multiplyVector(n, d))
+		, multiplyVector(v, h/2))
+		, multiplyVector(u, w/2));
+	viewingWindow.botLeft = addVectors(addVectors(addVectors(
+		eyeRay.origin 
+		, multiplyVector(n, d))
+		, multiplyVector(v, -h/2))
+		, multiplyVector(u, -w/2));		
+	viewingWindow.botRight = addVectors(addVectors(addVectors(
+		eyeRay.origin 
+		, multiplyVector(n, d))
+		, multiplyVector(v, -h/2))
+		, multiplyVector(u, w/2));
+		
+		
+		
+		
 
 
 
