@@ -5,6 +5,10 @@
  * Computer Graphics
  *
  * This program can create a ASCII Format image from an input file.
+ * I'm getting better at structuring c++
+ * Instincts tell me I should break up this file quite a bit.
+ * I'll have to figure out file includes for the next assignment.
+ * Main method is at the very bottom.
  *
  */
 
@@ -207,7 +211,12 @@ void loadSceneInformation(string inputFileName, RayType& eyeRay, PointType& upVe
 					{
 						eyeRay.direction.x = stof(tokens[1]);
 						eyeRay.direction.y = stof(tokens[2]);
-						eyeRay.direction.z = stof(tokens[3]);	
+						eyeRay.direction.z = stof(tokens[3]);
+						if(vectorLength(eyeRay.direction) == 0)	
+						{
+							cout << "View direction vector has length 0.  Please fix the input file." << endl;
+							throw(1);
+						}
 
 					}
 					else if(inputVarName.compare("updir") == 0)
@@ -215,6 +224,12 @@ void loadSceneInformation(string inputFileName, RayType& eyeRay, PointType& upVe
 						upVector.x = stof(tokens[1]);
 						upVector.y = stof(tokens[2]);
 						upVector.z = stof(tokens[3]);
+
+						if(vectorLength(upVector) == 0)	
+						{
+							cout << "Up vector has length 0.  Please fix the input file." << endl;
+							throw(1);
+						}
 					
 					}
 					else if(inputVarName.compare("fovh") == 0)
@@ -424,14 +439,47 @@ ColorType trace_ray(ViewingWindowType viewingWindow, RayType eyeRay, int x, int 
 		if(currentIntersectDistance != -1 && 
 			(currentIntersectDistance < intersectDistance || intersectDistance == -1))
 		{
-			cout << "Intersection Found." << endl;
-			cout << spheres[i].color.r << endl;
 			results = spheres[i].color;
 		}	
 	}
 			
 			
 	return results;
+}
+
+void writeImageFile(ColorType pixelArray[], int width, int height, string inputFileName)
+{
+	string widthString = to_string(width);
+	string heightString = to_string(height);
+
+	string outputFileName = inputFileName.substr(0,inputFileName.length()-4) + ".ppm";
+
+	//Write image File
+	ofstream myfile;
+	myfile.open (outputFileName);
+
+	//Write Header
+	myfile << "P3\n";
+	myfile << "# This image was created by Ben Matern from input file " << inputFileName << "\n";
+	myfile << widthString + " " + heightString + "\n";
+	myfile << "1\n";
+
+	//Loop through each pixel in the picture.
+	for(int y = 0; y < height ; y++)
+	{
+		for(int x = 0; x < width ; x++)
+		{
+			string r = to_string(pixelArray[ x + y*width ].r) + " ";
+			string b = to_string(pixelArray[ x + y*width ].b) + " ";
+			string g = to_string(pixelArray[ x + y*width ].g) + " ";
+			myfile << r << g << b;
+		}
+		//We just finished a row of pixels.
+		myfile << "\n";
+	}
+
+	myfile << "";
+	myfile.close();
 }
 
 int main( int argc, char *argv[] )
@@ -465,20 +513,23 @@ int main( int argc, char *argv[] )
 	ViewingWindowType viewingWindow;
 
 	string inputFileName;
-	string outputFileName;
 
 //Read commandline args to get the input file name.
 	inputFileName = getInputFileName(argc, argv);
 
-	outputFileName = inputFileName.substr(0,inputFileName.length()-4) + ".ppm";
-
 	cout << "Input:" << inputFileName << ":\n";
-	cout << "Output:" << outputFileName << ":\n";
 
 //Read input file to get the scene information.
-	loadSceneInformation(inputFileName, eyeRay, upVector, width, height, fovH
-		, bgColor, currentMaterialColor, spheres);
-
+	try
+	{
+		loadSceneInformation(inputFileName, eyeRay, upVector, width, height, fovH
+			, bgColor, currentMaterialColor, spheres);
+	}
+	catch(int e)
+	{
+		cout << "Exception occured during loadSceneInformation.  Doublecheck your input file.  Cannot recover." << endl;
+		return(0);
+	}
 //Initialize pixel array for output image
 	cout << "Initializing Pixel Array" << endl;
 	ColorType* pixelArray =new ColorType[width*height];
@@ -510,35 +561,7 @@ int main( int argc, char *argv[] )
 	}
 	
 //Write the data to a image file.
-	string widthString = to_string(width);
-	string heightString = to_string(height);
-
-	//Write image File
-	ofstream myfile;
-	myfile.open (outputFileName);
-
-	//Write Header
-	myfile << "P3\n";
-	myfile << "# This image was created by Ben Matern from input file " << inputFileName << "\n";
-	myfile << widthString + " " + heightString + "\n";
-	myfile << "1\n";
-
-	//Loop through each pixel in the picture.
-	for(int y = 0; y < height ; y++)
-	{
-		for(int x = 0; x < width ; x++)
-		{
-			string r = to_string(pixelArray[ x + y*width ].r) + " ";
-			string b = to_string(pixelArray[ x + y*width ].b) + " ";
-			string g = to_string(pixelArray[ x + y*width ].g) + " ";
-			myfile << r << g << b;
-		}
-		//We just finished a row of pixels.
-		myfile << "\n";
-	}
-
-	myfile << "";
-	myfile.close();
+	writeImageFile(pixelArray, width, height, inputFileName);
 
 	return 0;
 }
