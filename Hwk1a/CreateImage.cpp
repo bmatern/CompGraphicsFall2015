@@ -53,6 +53,7 @@ typedef struct
 
 double dotProduct(PointType firstVector, PointType secondVector)
 {
+	//Calculate dot product of 2 vectors
 	//s = x1 x2 + y1 y2 + z1 z2
 	double results = 
 		firstVector.x * secondVector.x +
@@ -63,6 +64,7 @@ double dotProduct(PointType firstVector, PointType secondVector)
 
 PointType crossProduct(PointType firstVector, PointType secondVector)
 {
+	//calculate cross product firstVector X secondVector
 	//u x v = 
 		// (uy * vz - uz * vy 
 		//, uz * vx - ux * vz 
@@ -76,6 +78,7 @@ PointType crossProduct(PointType firstVector, PointType secondVector)
 
 PointType addVectors(PointType firstVector, PointType secondVector)
 {
+	//respectively add the components of the two vectors.
 	PointType results;
 	results.x = firstVector.x + secondVector.x;
 	results.y = firstVector.y + secondVector.y;
@@ -96,6 +99,7 @@ PointType subtractPoints(PointType firstPoint, PointType secondPoint)
 
 PointType multiplyVector(PointType inputVector, double scalar)
 {
+	//Multiply a vector by a scalar
 	PointType results;	
 	results.x = inputVector.x * scalar;
 	results.y = inputVector.y * scalar;
@@ -105,6 +109,7 @@ PointType multiplyVector(PointType inputVector, double scalar)
 
 double vectorLength(PointType inputVector)
 {
+	//calculate the length of a vector
 	//sqrt(x^2 + y^2 + z^2)
 	return sqrt(inputVector.x * inputVector.x
 		+ inputVector.y * inputVector.y
@@ -113,6 +118,7 @@ double vectorLength(PointType inputVector)
 
 PointType normalizeVector(PointType inputVector)
 {
+	//normalize the vector to length 1.
 	double normalizeScalar = 1.0 / vectorLength(inputVector);
 	PointType results = multiplyVector(inputVector, normalizeScalar);
 	return results;
@@ -120,6 +126,7 @@ PointType normalizeVector(PointType inputVector)
 
 string trim(string str)
 {
+	//trim whitespace from the beginning and end of a string.
 	//cout << "trimming:" << str <<"\n";
 	size_t first = str.find_first_not_of(' ');
     size_t last = str.find_last_not_of(' ');
@@ -130,6 +137,8 @@ string trim(string str)
 
 vector<string> tokenizeString(string input)
 {
+	//split a string by a space delimiter.
+	//returns a vector of token strings.
 	vector<string> tokens;
 	int spaceLocation;
 	string tokenBuffer = trim(input);
@@ -164,6 +173,7 @@ vector<string> tokenizeString(string input)
 
 string getInputFileName(int argc, char *argv[])
 {
+	//Read commandline args to get input filename.
 	string inputFileName;
 	if ( argc == 2 )
 	{
@@ -182,6 +192,7 @@ string getInputFileName(int argc, char *argv[])
 void loadSceneInformation(string inputFileName, RayType& eyeRay, PointType& upVector, int& width, int& height, double& fovH
 	, ColorType& bgColor, ColorType& currentMaterialColor, vector<SphereType>& spheres)
 {
+	//read input file to determine the components of the scene.
 	string line;
 	ifstream myInputfile (inputFileName);
 	if (myInputfile.is_open())
@@ -235,6 +246,11 @@ void loadSceneInformation(string inputFileName, RayType& eyeRay, PointType& upVe
 					else if(inputVarName.compare("fovh") == 0)
 					{
 						fovH = stof(tokens[1]);
+						if(vectorLength(upVector) > 180)	
+						{
+							cout << "fovh should be <= 180.  Please fix the input file." << endl;
+							throw(1);
+						}
 					}
 					else if(inputVarName.compare("imsize") == 0)
 					{
@@ -294,6 +310,9 @@ void loadSceneInformation(string inputFileName, RayType& eyeRay, PointType& upVe
 void setViewingWindow(ViewingWindowType& viewingWindow, RayType eyeRay, PointType upVector, int width, int height, double fovH
 	, double& d, double& w, double& h , PointType& u, PointType& v)
 {
+	//calculate the viewing window parameters.
+	//Mostly we want to find out the u and v vectors, and the 
+	//4 corners of the window.
 
 	//the u vector is the unit vector orthogonal to the viewing direction and the up direction.
 	// u' is the non-normalized u vector.
@@ -356,6 +375,7 @@ void setViewingWindow(ViewingWindowType& viewingWindow, RayType eyeRay, PointTyp
 
 double intersectSphere(RayType inputRay, SphereType inputSphere)
 {
+	//find the location of the intersection between a ray and a sphere.
 	//return the distance to the intersection.
 	//return -1 if there is no intersection.
 	//Solving the combined sphere and ray equation to find an intersection.
@@ -530,6 +550,7 @@ int main( int argc, char *argv[] )
 		cout << "Exception occured during loadSceneInformation.  Doublecheck your input file.  Cannot recover." << endl;
 		return(0);
 	}
+	
 //Initialize pixel array for output image
 	cout << "Initializing Pixel Array" << endl;
 	ColorType* pixelArray =new ColorType[width*height];
