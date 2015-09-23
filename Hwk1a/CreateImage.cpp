@@ -5,8 +5,6 @@
  * Computer Graphics
  *
  * This program can create a ASCII Format image from an input file.
- * Sorry for spaghetti code, haven't written c++ in a decade or so :D
- * Most of my structure habits are from java.
  *
  */
 
@@ -490,9 +488,6 @@ int main( int argc, char *argv[] )
 	setViewingWindow(viewingWindow, eyeRay, upVector, width, height
 		, fovH, d, w, h ,u , v);
 
-
-	
-
 //foreach pixel in image array:
 	//call trace_ray() with appropriate parameters
 	//Use value returend by trace_ray to update pixel colors.
@@ -514,9 +509,7 @@ int main( int argc, char *argv[] )
 		}
 	}
 	
-
 //Write the data to a image file.
-
 	string widthString = to_string(width);
 	string heightString = to_string(height);
 
