@@ -536,7 +536,6 @@ int main( int argc, char *argv[] )
 
 //Read commandline args to get the input file name.
 	inputFileName = getInputFileName(argc, argv);
-
 	cout << "Input:" << inputFileName << ":\n";
 
 //Read input file to get the scene information.
@@ -550,7 +549,7 @@ int main( int argc, char *argv[] )
 		cout << "Exception occured during loadSceneInformation.  Doublecheck your input file.  Cannot recover." << endl;
 		return(0);
 	}
-	
+
 //Initialize pixel array for output image
 	cout << "Initializing Pixel Array" << endl;
 	ColorType* pixelArray =new ColorType[width*height];
