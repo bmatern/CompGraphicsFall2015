@@ -17,107 +17,12 @@
 #include <vector>
 #include <math.h>
 #include "PointType.h"
+#include "VectorType.h"
+#include "RayType.h"
+#include "ColorType.h"
+#include "SphereType.h"
+#include "ViewingWindowType.h"
 using namespace std;
-
-
-typedef struct 
-{
-	PointType origin;
-	PointType direction;
-} RayType;
-
-typedef struct 
-{
-	double r, g, b;
-} ColorType;
-
-typedef struct 
-{
-	PointType center;
-	double radius;
-	ColorType color;
-} SphereType;
-
-typedef struct
-{
-	PointType topLeft;
-	PointType topRight;
-	PointType botLeft;
-	PointType botRight;
-} ViewingWindowType;
-
-double dotProduct(PointType firstVector, PointType secondVector)
-{
-	//Calculate dot product of 2 vectors
-	//s = x1 x2 + y1 y2 + z1 z2
-	double results = 
-		firstVector.x * secondVector.x +
-		firstVector.y * secondVector.y +
-		firstVector.z * secondVector.z;
-	return results;
-}
-
-PointType crossProduct(PointType firstVector, PointType secondVector)
-{
-	//calculate cross product firstVector X secondVector
-	//u x v = 
-		// (uy * vz - uz * vy 
-		//, uz * vx - ux * vz 
-		//, ux * vy - uy * vx)
-	PointType results;
-	results.x = (firstVector.y * secondVector.z) - (firstVector.z * secondVector.y);
-	results.y = (firstVector.z * secondVector.x) - (firstVector.x * secondVector.z);
-	results.z = (firstVector.x * secondVector.y) - (firstVector.y * secondVector.x);
-	return results;
-}
-
-PointType addVectors(PointType firstVector, PointType secondVector)
-{
-	//respectively add the components of the two vectors.
-	PointType results;
-	results.x = firstVector.x + secondVector.x;
-	results.y = firstVector.y + secondVector.y;
-	results.z = firstVector.z + secondVector.z;
-	return results;
-}
-
-PointType subtractPoints(PointType firstPoint, PointType secondPoint)
-{
-	//subtract the first from the second.
-	//This finds the vector from firstPoint -> secondPoint
-	PointType results;
-	results.x = secondPoint.x - firstPoint.x;
-	results.y = secondPoint.y - firstPoint.y;
-	results.z = secondPoint.z - firstPoint.z;
-	return results;
-}
-
-PointType multiplyVector(PointType inputVector, double scalar)
-{
-	//Multiply a vector by a scalar
-	PointType results;	
-	results.x = inputVector.x * scalar;
-	results.y = inputVector.y * scalar;
-	results.z = inputVector.z * scalar;	
-	return results;
-}
-
-double vectorLength(PointType inputVector)
-{
-	//calculate the length of a vector
-	//sqrt(x^2 + y^2 + z^2)
-	return sqrt(inputVector.x * inputVector.x
-		+ inputVector.y * inputVector.y
-		+ inputVector.z * inputVector.z);
-}
-
-PointType normalizeVector(PointType inputVector)
-{
-	//normalize the vector to length 1.
-	double normalizeScalar = 1.0 / vectorLength(inputVector);
-	PointType results = multiplyVector(inputVector, normalizeScalar);
-	return results;
-}
 
 string trim(string str)
 {
@@ -184,7 +89,7 @@ string getInputFileName(int argc, char *argv[])
 	return inputFileName;
 }
 
-void loadSceneInformation(string inputFileName, RayType& eyeRay, PointType& upVector, int& width, int& height, double& fovH
+void loadSceneInformation(string inputFileName, RayType& eyeRay, VectorType& upVector, int& width, int& height, double& fovH
 	, ColorType& bgColor, ColorType& currentMaterialColor, vector<SphereType>& spheres)
 {
 	//read input file to determine the components of the scene.
@@ -218,7 +123,7 @@ void loadSceneInformation(string inputFileName, RayType& eyeRay, PointType& upVe
 						eyeRay.direction.x = stof(tokens[1]);
 						eyeRay.direction.y = stof(tokens[2]);
 						eyeRay.direction.z = stof(tokens[3]);
-						if(vectorLength(eyeRay.direction) == 0)	
+						if(eyeRay.direction.vectorLength() == 0)	
 						{
 							cout << "View direction vector has length 0.  Please fix the input file." << endl;
 							throw(1);
@@ -231,7 +136,7 @@ void loadSceneInformation(string inputFileName, RayType& eyeRay, PointType& upVe
 						upVector.y = stof(tokens[2]);
 						upVector.z = stof(tokens[3]);
 
-						if(vectorLength(upVector) == 0)	
+						if(upVector.vectorLength() == 0)	
 						{
 							cout << "Up vector has length 0.  Please fix the input file." << endl;
 							throw(1);
@@ -241,7 +146,7 @@ void loadSceneInformation(string inputFileName, RayType& eyeRay, PointType& upVe
 					else if(inputVarName.compare("fovh") == 0)
 					{
 						fovH = stof(tokens[1]);
-						if(vectorLength(upVector) > 180)	
+						if(upVector.vectorLength() > 180)	
 						{
 							cout << "fovh should be <= 180.  Please fix the input file." << endl;
 							throw(1);
@@ -302,8 +207,8 @@ void loadSceneInformation(string inputFileName, RayType& eyeRay, PointType& upVe
     }
 }
 
-void setViewingWindow(ViewingWindowType& viewingWindow, RayType eyeRay, PointType upVector, int width, int height, double fovH
-	, double& d, double& w, double& h , PointType& u, PointType& v)
+void setViewingWindow(ViewingWindowType& viewingWindow, RayType eyeRay, VectorType upVector, int width, int height, double fovH
+	, double& d, double& w, double& h , VectorType& u, VectorType& v)
 {
 	//calculate the viewing window parameters.
 	//Mostly we want to find out the u and v vectors, and the 
@@ -313,12 +218,12 @@ void setViewingWindow(ViewingWindowType& viewingWindow, RayType eyeRay, PointTyp
 	// u' is the non-normalized u vector.
 	// view_dir x up_dir = u'
 	// u = u'/ ||u'||	
-	PointType uPrime = crossProduct(eyeRay.direction , upVector);
-	u = normalizeVector(uPrime);
+	VectorType uPrime = eyeRay.direction.crossProduct(upVector);
+	u = uPrime.normalizeVector();
 	
 	//v is a unit vector orthogonal to both the viewing direction and u.
-	PointType vPrime = crossProduct(u , eyeRay.direction);
-	v = normalizeVector(vPrime);
+	VectorType vPrime = u.crossProduct(eyeRay.direction);
+	v = vPrime.normalizeVector();
 	
 	// d is an arbitrary viewing distance, from eye to viewing window.  It is in world coordinates.
 	d = 1.0;
@@ -330,7 +235,7 @@ void setViewingWindow(ViewingWindowType& viewingWindow, RayType eyeRay, PointTyp
 	h = w * height / width ;
 	
 	//n is the normalized view direction vector
-	PointType n = normalizeVector(eyeRay.direction);
+	VectorType n = eyeRay.direction.normalizeVector();
 	
 	//each of these calculations are one point + 3 vectors.
 	//This results in a point (well, 4 points)
@@ -338,33 +243,33 @@ void setViewingWindow(ViewingWindowType& viewingWindow, RayType eyeRay, PointTyp
 	//ur = view_origin + d⋅n + h/2⋅v + w/2⋅u
 	//ll = view_origin + d⋅n – h/2⋅v – w/2⋅u
 	//lr = view_origin + d⋅n – h/2⋅v + w/2⋅u
-	viewingWindow.topLeft = addVectors(addVectors(addVectors(
-		eyeRay.origin 
-		, multiplyVector(n, d))
-		, multiplyVector(v, h/2))
-		, multiplyVector(u, -w/2));		
-	viewingWindow.topRight = addVectors(addVectors(addVectors(
-		eyeRay.origin 
-		, multiplyVector(n, d))
-		, multiplyVector(v, h/2))
-		, multiplyVector(u, w/2));
-	viewingWindow.botLeft = addVectors(addVectors(addVectors(
-		eyeRay.origin 
-		, multiplyVector(n, d))
-		, multiplyVector(v, -h/2))
-		, multiplyVector(u, -w/2));		
-	viewingWindow.botRight = addVectors(addVectors(addVectors(
-		eyeRay.origin 
-		, multiplyVector(n, d))
-		, multiplyVector(v, -h/2))
-		, multiplyVector(u, w/2));
+	viewingWindow.topLeft = 
+		eyeRay.origin.getVectorFromPoint().addVectors(
+		n.multiplyVector(d)).addVectors(
+		v.multiplyVector(h/2)).addVectors(
+		u.multiplyVector(-w/2)).getPointFromVector();		
+	viewingWindow.topRight = 
+		eyeRay.origin.getVectorFromPoint().addVectors(
+		n.multiplyVector(d)).addVectors(
+		v.multiplyVector(h/2)).addVectors(
+		u.multiplyVector(w/2)).getPointFromVector();
+	viewingWindow.botLeft = 
+		eyeRay.origin.getVectorFromPoint().addVectors(
+		n.multiplyVector(d)).addVectors(
+		v.multiplyVector(-h/2)).addVectors(
+		u.multiplyVector(-w/2)).getPointFromVector();		
+	viewingWindow.botRight = 
+		eyeRay.origin.getVectorFromPoint().addVectors(
+		n.multiplyVector(d)).addVectors(
+		v.multiplyVector(-h/2)).addVectors(
+		u.multiplyVector(w/2)).getPointFromVector();
 			
 	cout << "Double check the aspect ratios to see that they match." << endl;
 	double pixAspRat = 1.0 * width /height;
 	cout << "Pixel aspect ratio:" << pixAspRat << endl;
-	double worldAspRat = (vectorLength(addVectors(viewingWindow.botLeft, viewingWindow.botRight)))
-		/ (vectorLength(subtractPoints(viewingWindow.botLeft, viewingWindow.topLeft)));
-	cout << "World aspect ratio:" << pixAspRat << endl;
+	double worldAspRat = (viewingWindow.botLeft.vectorFromHereToPoint(viewingWindow.botRight).vectorLength())
+		/ (viewingWindow.botLeft.vectorFromHereToPoint(viewingWindow.topLeft).vectorLength());
+	cout << "World aspect ratio:" << worldAspRat << endl;
 
 }
 
@@ -430,21 +335,21 @@ double intersectSphere(RayType inputRay, SphereType inputSphere)
 	}
 }
 
-ColorType trace_ray(ViewingWindowType viewingWindow, RayType eyeRay, int x, int y, PointType deltaH, PointType deltaV
+ColorType trace_ray(ViewingWindowType viewingWindow, RayType eyeRay, int x, int y, VectorType deltaH, VectorType deltaV
 	, ColorType bgColor, vector<SphereType> spheres)
 {
 	//default to background color.  Switch to sphere color if ray intersects it.
 	ColorType results = bgColor;	
 	//This is the mapping to the world coordinate point.
 	//topleft + deltaH*x + deltaV * y
-	PointType worldCoordinatesPoint = addVectors(addVectors(
-		viewingWindow.topLeft
-		,multiplyVector(deltaH, x))
-		,multiplyVector(deltaV, y));
+	PointType worldCoordinatesPoint = 
+		viewingWindow.topLeft.getVectorFromPoint().addVectors(
+		deltaH.multiplyVector(x)).addVectors(
+		deltaV.multiplyVector(y)).getPointFromVector();
 		
 	RayType rayToTrace;
 	rayToTrace.origin = eyeRay.origin;
-	rayToTrace.direction = normalizeVector(subtractPoints(rayToTrace.origin, worldCoordinatesPoint));
+	rayToTrace.direction = rayToTrace.origin.vectorFromHereToPoint(worldCoordinatesPoint).normalizeVector();
 			
 	//determine intersection points with each sphere.
 	double intersectDistance = -1;
@@ -512,9 +417,9 @@ int main( int argc, char *argv[] )
 	
 	RayType eyeRay;	
 	
-	PointType upVector;
-	PointType u;
-	PointType v;	
+	VectorType upVector;
+	VectorType u;
+	VectorType v;	
 	
 	ColorType bgColor;
 	ColorType currentMaterialColor;
@@ -561,10 +466,8 @@ int main( int argc, char *argv[] )
 	//Passing in deltaH and deltaV so I don't need to calculate it every time.
 	//deltaH and deltaV are VECTORS.  they indicate how far to increment the viewing window for each pixel.
 	//deltaH = (ur - ul)/(pixwidth - 1)
-	PointType deltaH = multiplyVector( subtractPoints(viewingWindow.topLeft, viewingWindow.topRight) 
-		, (1.0/(width - 1)));
-	PointType deltaV = multiplyVector( subtractPoints(viewingWindow.topLeft, viewingWindow.botLeft) 
-		, (1.0/(height - 1)));
+	VectorType deltaH = viewingWindow.topLeft.vectorFromHereToPoint(viewingWindow.topRight).multiplyVector(1.0/(width - 1));
+	VectorType deltaV = viewingWindow.topLeft.vectorFromHereToPoint(viewingWindow.botLeft).multiplyVector(1.0/(height - 1));
 
 	for(int y = 0; y < height; y++)
 	{
