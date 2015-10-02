@@ -5,15 +5,10 @@
  * Computer Graphics
  *
  * This program can create a ASCII Format image from an input file.
- * I'm getting better at structuring c++
- * Instincts tell me I should break up this file quite a bit.
- * I'll have to figure out file includes for the next assignment.
  * Main method is at the very bottom.
  *
  */
 
-#include <iostream>
-#include <fstream>
 #include <vector>
 #include <math.h>
 #include "PointType.h"
@@ -22,72 +17,8 @@
 #include "ColorType.h"
 #include "SphereType.h"
 #include "ViewingWindowType.h"
+#include "Common.h"
 using namespace std;
-
-string trim(string str)
-{
-	//trim whitespace from the beginning and end of a string.
-	//cout << "trimming:" << str <<"\n";
-	size_t first = str.find_first_not_of(' ');
-    size_t last = str.find_last_not_of(' ');
-    string result = str.substr(first, (last-first+1));
-    //cout << "result:" << result <<"\n";
-    return result;
-}
-
-vector<string> tokenizeString(string input)
-{
-	//split a string by a space delimiter.
-	//returns a vector of token strings.
-	vector<string> tokens;
-	int spaceLocation;
-	string tokenBuffer = trim(input);
-	
-	while(true)
-	{
-		//cout << "tokenizing this:" << tokenBuffer << "\n";
-		spaceLocation = tokenBuffer.find(" ");
-		if(spaceLocation < 1)
-		{
-			if(tokenBuffer.length() > 0)
-			{
-				//cout << "Last token:" << tokenBuffer << "\n";
-				tokens.push_back(tokenBuffer);
-			}
-			//cout << "End of tokens.\n";
-			break;
-		}
-		else
-		{
-			string token = tokenBuffer.substr(0, spaceLocation);
-			//cout << "Token found:" << token << "\n";
-			tokenBuffer = tokenBuffer.substr(spaceLocation + 1, tokenBuffer.length());
-			tokenBuffer = trim(tokenBuffer);
-			//cout << "new Buffer:" << tokenBuffer << "\n";
-			
-			tokens.push_back(token);
-		}
-	}
-	return tokens;
-}
-
-string getInputFileName(int argc, char *argv[])
-{
-	//Read commandline args to get input filename.
-	string inputFileName;
-	if ( argc == 2 )
-	{
-		//cout << "arg0:" << argv[0];
-		inputFileName = argv[1];
-		cout << "one argument found.  Good.  Filename = " << inputFileName << "\n";
-	}
-	else
-	{
-		cout << "You should have exactly one argument, the input file name.  Using default filename instead.\n";
-		inputFileName = "example_input.txt";
-	}
-	return inputFileName;
-}
 
 void loadSceneInformation(string inputFileName, RayType& eyeRay, VectorType& upVector, int& width, int& height, double& fovH
 	, ColorType& bgColor, ColorType& currentMaterialColor, vector<SphereType>& spheres)
@@ -104,7 +35,7 @@ void loadSceneInformation(string inputFileName, RayType& eyeRay, VectorType& upV
 	    	if(line.length() > 0)
 	    	{
 	    		    	
-				vector<string> tokens = tokenizeString(line);
+				vector<string> tokens = Common::tokenizeString(line);
 				if(tokens.size() > 0)
 				{
 					//cout <<	tokens.size() << " tokens found.\n";		
@@ -335,6 +266,29 @@ double intersectSphere(RayType inputRay, SphereType inputSphere)
 	}
 }
 
+ColorType phongLighting(ColorType inputColor)
+{
+	//The basic Phong illumination equation:
+	//Iλ = ka Odλ + kd Odλ(N ⋅L)+ ks Osλ (N ⋅H)^n
+	//ka, kd, ks are constants for ambient, diffuse, specular weights.  "Reflectivity"
+	//Odλ is the color of the object (sphere in this case)
+	//n controls the effective rate of falloff in the intensity
+	//	of the specular highlight as the direction of reflection differs from
+	//	the direction to the viewer
+	//	(It's how shiny the specular spot is)
+	//Osλ is the color of the specular highlight.  Start with white.  Other stuff will be ridiculous.
+	//N = UNIT VECTOR for the direction of hte surface normal to the point where illlumination is evaluated.
+	//	should be able to calculate that based on center of hte sphere.  equation on p16 of notes
+	//L = UNIT VECTOR from the point evaulated towards the light source.  Easy.  Depends on point light sources etc.
+	//H = UNIT vector that represents the direction that is halfway between direction of light and direction to viewer.
+	//	equation is on p29
+	//Calculate specular and diffuse multiple times for different light sources.
+
+
+
+	return inputColor;
+}
+
 ColorType trace_ray(ViewingWindowType viewingWindow, RayType eyeRay, int x, int y, VectorType deltaH, VectorType deltaV
 	, ColorType bgColor, vector<SphereType> spheres)
 {
@@ -356,10 +310,13 @@ ColorType trace_ray(ViewingWindowType viewingWindow, RayType eyeRay, int x, int 
 	for(int i = 0; i < spheres.size(); i++)
 	{
 		double currentIntersectDistance = intersectSphere(rayToTrace, spheres[i]);
+		//I hope this logic gives me the very closest non-negative sphere distance.  
 		if(currentIntersectDistance != -1 && 
 			(currentIntersectDistance < intersectDistance || intersectDistance == -1))
 		{
-			results = spheres[i].color;
+			//Here' where I should call the phong model.
+			results = phongLighting(spheres[i].color);
+			intersectDistance = currentIntersectDistance;
 		}	
 	}
 			
@@ -367,40 +324,7 @@ ColorType trace_ray(ViewingWindowType viewingWindow, RayType eyeRay, int x, int 
 	return results;
 }
 
-void writeImageFile(ColorType pixelArray[], int width, int height, string inputFileName)
-{
-	string widthString = to_string(width);
-	string heightString = to_string(height);
 
-	string outputFileName = inputFileName.substr(0,inputFileName.length()-4) + ".ppm";
-
-	//Write image File
-	ofstream myfile;
-	myfile.open (outputFileName);
-
-	//Write Header
-	myfile << "P3\n";
-	myfile << "# This image was created by Ben Matern from input file " << inputFileName << "\n";
-	myfile << widthString + " " + heightString + "\n";
-	myfile << "1\n";
-
-	//Loop through each pixel in the picture.
-	for(int y = 0; y < height ; y++)
-	{
-		for(int x = 0; x < width ; x++)
-		{
-			string r = to_string(pixelArray[ x + y*width ].r) + " ";
-			string b = to_string(pixelArray[ x + y*width ].b) + " ";
-			string g = to_string(pixelArray[ x + y*width ].g) + " ";
-			myfile << r << g << b;
-		}
-		//We just finished a row of pixels.
-		myfile << "\n";
-	}
-
-	myfile << "";
-	myfile.close();
-}
 
 int main( int argc, char *argv[] )
 {
@@ -435,7 +359,7 @@ int main( int argc, char *argv[] )
 	string inputFileName;
 
 //Read commandline args to get the input file name.
-	inputFileName = getInputFileName(argc, argv);
+	inputFileName = Common::getInputFileName(argc, argv);
 	cout << "Input:" << inputFileName << ":\n";
 
 //Read input file to get the scene information.
@@ -479,7 +403,7 @@ int main( int argc, char *argv[] )
 	}
 	
 //Write the data to a image file.
-	writeImageFile(pixelArray, width, height, inputFileName);
+	Common::writeImageFile(pixelArray, width, height, inputFileName);
 
 	return 0;
 }
