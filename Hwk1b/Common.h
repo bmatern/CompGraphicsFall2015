@@ -24,6 +24,7 @@ class Common
 	static void writeImageFile(PictureData data);
 	static bool thresholdCompare(double, double);
 	static double intersectSphere(RayType ray, SphereType sphere);
+	static string getColorValue(double colorValue);
 };
 
 #endif

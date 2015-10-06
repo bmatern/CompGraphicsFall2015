@@ -127,6 +127,15 @@ string Common::getInputFileName(int argc, char *argv[])
 	return inputFileName;
 }
 
+string Common::getColorValue(double colorValue)
+{
+	//to_string(inputPicture.pixelArray[ x + y*inputPicture.width ].r) + " ";
+	double multiplied = colorValue * 255.0;
+	int roundedInt = round(multiplied);
+	//cout << "GettingColorValue " << colorValue << "," << multiplied << "," << roundedInt << endl;
+	return to_string(roundedInt) + " ";
+}
+
 void Common::writeImageFile(PictureData inputPicture)
 {
 	string widthString = to_string(inputPicture.width);
@@ -142,16 +151,16 @@ void Common::writeImageFile(PictureData inputPicture)
 	myfile << "P3\n";
 	myfile << "# This image was created by Ben Matern from input file " << inputPicture.inputFileName << "\n";
 	myfile << widthString + " " + heightString + "\n";
-	myfile << "1\n";
+	myfile << "255\n";
 
 	//Loop through each pixel in the picture.
 	for(int y = 0; y < inputPicture.height ; y++)
 	{
 		for(int x = 0; x < inputPicture.width ; x++)
 		{
-			string r = to_string(inputPicture.pixelArray[ x + y*inputPicture.width ].r) + " ";
-			string b = to_string(inputPicture.pixelArray[ x + y*inputPicture.width ].b) + " ";
-			string g = to_string(inputPicture.pixelArray[ x + y*inputPicture.width ].g) + " ";
+			string r = getColorValue(inputPicture.pixelArray[ x + y*inputPicture.width ].r);
+			string b = getColorValue(inputPicture.pixelArray[ x + y*inputPicture.width ].b);
+			string g = getColorValue(inputPicture.pixelArray[ x + y*inputPicture.width ].g);
 			myfile << r << g << b;
 		}
 		//We just finished a row of pixels.

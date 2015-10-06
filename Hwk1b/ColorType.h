@@ -8,6 +8,7 @@ class ColorType
 
 	ColorType multiplyColor(double scalar);
 	ColorType addColor(ColorType);
+	ColorType clamp();
 };
 
 #endif

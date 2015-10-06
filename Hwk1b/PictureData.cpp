@@ -25,7 +25,8 @@ void PictureData::loadSceneInformation()
 					{
 						eyeRay.origin.x = stod(tokens[1]);
 						eyeRay.origin.y = stod(tokens[2]);
-						eyeRay.origin.z = stod(tokens[3]);			
+						eyeRay.origin.z = stod(tokens[3]);		
+						cout << "Eye Found " << eyeRay.origin.x << "," << eyeRay.origin.y << "," << eyeRay.origin.z << endl;	
 
 					}		
 					else if(inputVarName.compare("viewdir") == 0)
@@ -88,6 +89,11 @@ void PictureData::loadSceneInformation()
 						currentMaterial.ks = stod(tokens[9]);
 
 						currentMaterial.n = stod(tokens[10]);
+
+						cout << "Read a material. rgb=" << currentMaterial.color.r << "," << currentMaterial.color.g << "," << currentMaterial.color.b
+							<< " specular = " << currentMaterial.specularHighlight.r << "," << currentMaterial.specularHighlight.g << "," << currentMaterial.specularHighlight.b 
+							<< " ka=" << currentMaterial.ka << " kd=" << currentMaterial.kd << " ks=" << currentMaterial.ks << " n=" << currentMaterial.n
+							<< endl;
 					}
 					else if(inputVarName.compare("sphere") == 0)
 					{
@@ -107,7 +113,8 @@ void PictureData::loadSceneInformation()
 						cout << "Light source Found" << endl;
 						LightType currentLight;
 
-						bool isDirectional = (stoi(tokens[4])==1);		
+						bool isDirectional = (stoi(tokens[4])==0);	
+						cout << "isDirectional" << isDirectional << endl;;	
 						currentLight.isDirectional = isDirectional;
 
 						if(isDirectional)	
@@ -123,9 +130,9 @@ void PictureData::loadSceneInformation()
 							currentLight.center.z = stod(tokens[3]);
 						}		
 
-						currentLight.color.r = stod(tokens[5]);	
-						currentLight.color.g = stod(tokens[6]);	
-						currentLight.color.b = stod(tokens[7]);	
+						currentLight.intensity.r = stod(tokens[5]);	
+						currentLight.intensity.g = stod(tokens[6]);	
+						currentLight.intensity.b = stod(tokens[7]);	
 					
 						lights.push_back(currentLight);					
 					}
@@ -231,7 +238,7 @@ bool PictureData::isShaded(int x, int y)
 	return false;
 }
 
-ColorType PictureData::shadeRay(int x, int y, SphereType sphere)
+ColorType PictureData::shadeRay(SphereType sphere, RayType tracedRay, PointType intersectPoint)
 {
 	//The basic Phong illumination equation:
 	//Iλ = ka Odλ + kd Odλ(N ⋅L)+ ks Osλ (N ⋅H)^n
@@ -248,27 +255,80 @@ ColorType PictureData::shadeRay(int x, int y, SphereType sphere)
 	//L = UNIT VECTOR from the point evaulated towards the light source.  Easy.  Depends on point light sources etc.
 	//H = UNIT vector that represents the direction that is halfway between direction of light and direction to viewer.
 	//	equation is on p29
-	//Calculate specular and diffuse multiple times for different light sources.
+	//Calculate specular and diffuse multiple times for different light sources.  Use the max.
 
-	/*if(isShaded(x,y))
-	{
-		cout << "it's shaded." << endl;
-	}
-	else
-	{
-		cout << "it's not shaded." << endl;
-	}*/
+
+	ColorType results;
 
 	//ka Odλ
 	ColorType ambientComponent = sphere.material.color.multiplyColor(sphere.material.ka);
 
+	//kd Odλ(N ⋅L)	
 	ColorType diffuseComponent;
+
+	//ks Osλ (N ⋅H)^n
+	ColorType specularComponent;
+
+	VectorType N = sphere.center.vectorFromHereToPoint(intersectPoint).normalizeVector();
+	//V is the unit vector towards the viewer
+	//VectorType V = eyeRay.direction.multiplyVector(-1.0).normalizeVector();
+	VectorType V = intersectPoint.vectorFromHereToPoint(eyeRay.origin).normalizeVector();
+
+	//Get the max diffuse and specular for each light source.
 	for(int i = 0; i < lights.size(); i++)
 	{
+		LightType currentLight = lights[i];
+		VectorType L;
+
+		if(currentLight.isDirectional)
+		{
+			L = currentLight.direction.multiplyVector(-1).normalizeVector();
+		}
+		else
+		{
+			L = intersectPoint.vectorFromHereToPoint(currentLight.center).normalizeVector();
+		}
+		//kd Odλ(N ⋅L)
+		ColorType currentDiffuse 
+			= sphere.material.color
+				.multiplyColor(sphere.material.kd)
+				.multiplyColor(N.dotProduct(L)).clamp();
+
+		diffuseComponent.r = (currentDiffuse.r > diffuseComponent.r) ? currentDiffuse.r : diffuseComponent.r;
+		diffuseComponent.g = (currentDiffuse.g > diffuseComponent.g) ? currentDiffuse.g : diffuseComponent.g;
+		diffuseComponent.b = (currentDiffuse.b > diffuseComponent.b) ? currentDiffuse.b : diffuseComponent.b;
+
+		
+		//H = (L + V) / ||L + V||
+		VectorType H = L.addVectors(V).multiplyVector(
+			1.0/(L.addVectors(V).vectorLength())
+			).normalizeVector();
+		//H = H.multiplyVector(1.0/H.vectorLength());
+
+		//ks Osλ (N ⋅H)^n
+
+
+		ColorType currentSpecular
+			= sphere.material.specularHighlight
+				.multiplyColor(sphere.material.ks)
+				.multiplyColor(pow(N.dotProduct(H),sphere.material.n))
+				.clamp();
+
+
+		specularComponent.r = (currentSpecular.r > specularComponent.r) ? currentSpecular.r : specularComponent.r;
+		specularComponent.g = (currentSpecular.g > specularComponent.g) ? currentSpecular.g : specularComponent.g;
+		specularComponent.b = (currentSpecular.b > specularComponent.b) ? currentSpecular.b : specularComponent.b;
+		//specularComponent.r += currentSpecular.r;
+		//specularComponent.g += currentSpecular.g;
 
 	}
 
-	return sphere.material.color;
+
+	//return ambientComponent.addColor(diffuseComponent.addColor(specularComponent));
+	return ambientComponent
+	.addColor(diffuseComponent)
+	//.addColor(specularComponent)
+	.clamp();
 }
 
 
@@ -289,6 +349,7 @@ ColorType PictureData::traceRay(int x, int y)
 			
 	//determine intersection points with each sphere.
 	double intersectDistance = -1;
+	SphereType intersectSphere;
 	for(int i = 0; i < spheres.size(); i++)
 	{
 		double currentIntersectDistance = Common::intersectSphere(rayToTrace, spheres[i]);
@@ -296,15 +357,19 @@ ColorType PictureData::traceRay(int x, int y)
 		if(currentIntersectDistance != -1 && 
 			(currentIntersectDistance < intersectDistance || intersectDistance == -1))
 		{
-			//Here' where I should call the phong model.
-			results = shadeRay(x,y,spheres[i]);
-
-
 			intersectDistance = currentIntersectDistance;
+			intersectSphere = spheres[i];
 		}	
 	}
-			
-			
+
+	if(intersectDistance != -1)
+	{
+		//It's hit.
+		PointType intersectPoint = rayToTrace.direction.multiplyVector(intersectDistance).addVectors(rayToTrace.origin).getPointFromVector();
+		results = shadeRay(intersectSphere, rayToTrace, intersectPoint);
+
+	}
+
 	return results;
 }
 

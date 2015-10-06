@@ -16,7 +16,7 @@ class LightType
 	PointType center;
 	VectorType direction;
 
-	ColorType color;
+	ColorType intensity;
 };
 
 #endif

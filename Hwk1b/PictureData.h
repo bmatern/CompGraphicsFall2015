@@ -61,7 +61,7 @@ class PictureData
 	void loadSceneInformation();
 	void setViewingWindow();
 	ColorType traceRay(int x, int y);
-	ColorType shadeRay(int x, int y, SphereType sphere);
+	ColorType shadeRay(SphereType sphere, RayType tracedRay, PointType intersectPoint);
 	bool isShaded(int x, int y);
 	void traceRays();
 };

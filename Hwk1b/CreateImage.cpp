@@ -9,15 +9,6 @@
  *
  */
 
-//#include <vector>
-//#include <math.h>
-//#include "PointType.h"
-//#include "VectorType.h"
-//#include "RayType.h"
-//#include "ColorType.h"
-//#include "SphereType.h"
-//#include "LightType.h"
-//#include "ViewingWindowType.h"
 #include "Common.h"
 #include "PictureData.h"
 using namespace std;
@@ -46,6 +37,7 @@ int main( int argc, char *argv[] )
 	}
 
 //Perform necessary preliminary calculations.
+//Set up the viewing window etc.
 	cout << "Starting Preliminary Calculations" << endl;
 	pictureConfig.setViewingWindow();
 
