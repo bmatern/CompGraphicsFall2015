@@ -7,7 +7,7 @@ ColorType ColorType::multiplyColor(double scalar)
 	results.r = r * scalar;
 	results.g = g * scalar;
 	results.b = b * scalar;	
-	return results;
+	return results.clamp();
 }
 
 ColorType ColorType::addColor(ColorType otherColor)
@@ -18,7 +18,7 @@ ColorType ColorType::addColor(ColorType otherColor)
 	results.r = r + otherColor.r;
 	results.g = g + otherColor.g;
 	results.b = b + otherColor.b;
-	return results;
+	return results.clamp();
 }
 
 ColorType ColorType::clamp()

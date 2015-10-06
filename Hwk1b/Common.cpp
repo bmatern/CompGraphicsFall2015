@@ -62,6 +62,11 @@ double Common::intersectSphere(RayType inputRay, SphereType inputSphere)
 	}
 }
 
+double Common::clamp(double input)
+{
+	return (input>1)?1:(input<0)?0:input;
+}
+
 string Common::trim(string str)
 {
 	//trim whitespace from the beginning and end of a string.
@@ -171,7 +176,7 @@ void Common::writeImageFile(PictureData inputPicture)
 	myfile.close();
 }
 
-bool Common::thresholdCompare(double a, double b)
+bool Common::thresholdEquals(double a, double b)
 {
 	//Matt suggested we use a threshold compare, rather than direct equals.
 	//This is because floating point values are silly, and represnt numbers in funny ways.

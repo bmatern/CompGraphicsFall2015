@@ -233,8 +233,40 @@ void PictureData::setViewingWindow()
 	pixelArray =new ColorType[width*height];
 }
 
-bool PictureData::isShaded(int x, int y)
+bool PictureData::isShaded(PointType origin, VectorType L, LightType light)
 {
+	//L is the vector TOWARDS the light source.
+	RayType shadowRay;
+	shadowRay.origin = origin;
+	shadowRay.direction = L;
+
+	for(int i = 0; i < spheres.size(); i++)
+	{
+		double t = Common::intersectSphere(shadowRay,spheres[i]);
+		//t == -1 means it missed.  t==0 means we hit the originating sphere.  Don't count that as an intersection.
+		if(t != -1  && !Common::thresholdEquals(t,0))
+		{
+			//return true;
+			//hit!  We intersected a sphere.
+			//This point is shaded.
+			if(light.isDirectional)
+			{
+				return true;
+			}
+			else
+			{
+				//this is a point light.
+				//is the intersection beyond the light source?
+				double distanceToLightSource = origin.vectorFromHereToPoint(light.center).vectorLength();
+				if(distanceToLightSource > t)
+				{
+					return true;
+				}
+				//D on't return anything here cuz the light is closer than the object.
+			}
+		}
+	}
+	
 	return false;
 }
 
@@ -297,38 +329,41 @@ double PictureData::phongLighting(int colorIndex, MaterialType material, VectorT
 			L = intersectPoint.vectorFromHereToPoint(currentLight.center).normalizeVector();
 		}
 
-		//kd Odλ(N ⋅L)
-		double currentDiffuse 
-			= colorValue 
-				* material.kd
-				* lightIntensity
-				* (N.dotProduct(L));
 
-		//Find the max diffuse color component.
-		diffuseComponent = (currentDiffuse > diffuseComponent) ? currentDiffuse : diffuseComponent;
+		bool shadow = isShaded(intersectPoint, L, currentLight);
 
-		//H = (L + V) / ||L + V||
-		VectorType H = L.addVectors(V).multiplyVector(
-			1.0/(L.addVectors(V).vectorLength())
-			).normalizeVector();
-		//H = H.multiplyVector(1.0/H.vectorLength());
+		//There is no diffuse or specular lighting if it's under a shadow.
 
-		//ks Osλ (N ⋅H)^n
+		if(!shadow)
+		{
+			//I*kd Odλ(N ⋅L)
+			double currentDiffuse = Common::clamp(
+					colorValue 
+					* material.kd
+					* lightIntensity
+					* (N.dotProduct(L)));
 
+			//Find the max diffuse color component.
+			diffuseComponent = (currentDiffuse > diffuseComponent) ? currentDiffuse : diffuseComponent;
+			//diffuseComponent = Common::clamp(currentDiffuse + diffuseComponent);
 
-		double currentSpecular
-			= specularValue
-				* material.ks
-				* lightIntensity
-				* (pow(N.dotProduct(H),material.n));
+			//H = (L + V) / ||L + V||
+			VectorType H = L.addVectors(V).multiplyVector(
+				1.0/(L.addVectors(V).vectorLength())
+				).normalizeVector();
+			//H = H.multiplyVector(1.0/H.vectorLength());
 
-		specularComponent = (currentSpecular > specularComponent) ? currentSpecular : specularComponent;
-		//specularComponent.r = (currentSpecular.r > specularComponent.r) ? currentSpecular.r : specularComponent.r;
-		//specularComponent.g = (currentSpecular.g > specularComponent.g) ? currentSpecular.g : specularComponent.g;
-		//specularComponent.b = (currentSpecular.b > specularComponent.b) ? currentSpecular.b : specularComponent.b;
-		//specularComponent.r += currentSpecular.r;
-		//specularComponent.g += currentSpecular.g;
+			//ks Osλ (N ⋅H)^n
+			double currentSpecular = Common::clamp(
+					specularValue
+					* material.ks
+					* lightIntensity
+					* (pow(N.dotProduct(H),material.n))
+					);
 
+			specularComponent = (currentSpecular > specularComponent) ? currentSpecular : specularComponent;
+			//specularComponent = Common::clamp(currentSpecular + specularComponent);
+		}
 	}
 
 	return ambientComponent
@@ -339,8 +374,6 @@ double PictureData::phongLighting(int colorIndex, MaterialType material, VectorT
 
 ColorType PictureData::shadeRay(SphereType sphere, RayType tracedRay, PointType intersectPoint)
 {
-
-
 	ColorType results;
 
 	VectorType N = sphere.center.vectorFromHereToPoint(intersectPoint).normalizeVector();
@@ -366,15 +399,7 @@ ColorType PictureData::shadeRay(SphereType sphere, RayType tracedRay, PointType 
 		, intersectPoint
 		);
 
-
-
-
-
-	//return ambientComponent.addColor(diffuseComponent.addColor(specularComponent));
 	return results;
-	//.addColor(diffuseComponent)
-	//.addColor(specularComponent)
-	//.clamp();
 }
 
 

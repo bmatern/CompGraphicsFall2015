@@ -22,9 +22,10 @@ class Common
 	static vector<string> tokenizeString(string);
 	static string getInputFileName(int, char*[]);
 	static void writeImageFile(PictureData data);
-	static bool thresholdCompare(double, double);
+	static bool thresholdEquals(double, double);
 	static double intersectSphere(RayType ray, SphereType sphere);
 	static string getColorValue(double colorValue);
+	static double clamp(double input);
 };
 
 #endif
