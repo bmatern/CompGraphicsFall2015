@@ -238,7 +238,7 @@ bool PictureData::isShaded(int x, int y)
 	return false;
 }
 
-ColorType PictureData::shadeRay(SphereType sphere, RayType tracedRay, PointType intersectPoint)
+double PictureData::phongLighting(int colorIndex, MaterialType material, VectorType N, VectorType V, PointType intersectPoint)
 {
 	//The basic Phong illumination equation:
 	//Iλ = ka Odλ + kd Odλ(N ⋅L)+ ks Osλ (N ⋅H)^n
@@ -257,28 +257,36 @@ ColorType PictureData::shadeRay(SphereType sphere, RayType tracedRay, PointType 
 	//	equation is on p29
 	//Calculate specular and diffuse multiple times for different light sources.  Use the max.
 
+	//colorIndex should be 0,1,2 corresponding with r,g,b
+	//think of a better way to do that.
 
-	ColorType results;
+	double colorValue = (colorIndex==0) ? material.color.r 
+					: (colorIndex==1) ? material.color.g 
+					: material.color.b;
+
+	double specularValue = (colorIndex==0) ? material.specularHighlight.r 
+					: (colorIndex==1) ? material.specularHighlight.g 
+					: material.specularHighlight.b;
+
 
 	//ka Odλ
-	ColorType ambientComponent = sphere.material.color.multiplyColor(sphere.material.ka);
+	double ambientComponent = colorValue * material.ka;
 
 	//kd Odλ(N ⋅L)	
-	ColorType diffuseComponent;
+	double diffuseComponent;
 
 	//ks Osλ (N ⋅H)^n
-	ColorType specularComponent;
-
-	VectorType N = sphere.center.vectorFromHereToPoint(intersectPoint).normalizeVector();
-	//V is the unit vector towards the viewer
-	//VectorType V = eyeRay.direction.multiplyVector(-1.0).normalizeVector();
-	VectorType V = intersectPoint.vectorFromHereToPoint(eyeRay.origin).normalizeVector();
+	double specularComponent;
 
 	//Get the max diffuse and specular for each light source.
 	for(int i = 0; i < lights.size(); i++)
 	{
 		LightType currentLight = lights[i];
 		VectorType L;
+
+		double lightIntensity = (colorIndex==0) ? currentLight.intensity.r 
+								: (colorIndex==1) ? currentLight.intensity.g 
+								: currentLight.intensity.b;
 
 		if(currentLight.isDirectional)
 		{
@@ -288,17 +296,17 @@ ColorType PictureData::shadeRay(SphereType sphere, RayType tracedRay, PointType 
 		{
 			L = intersectPoint.vectorFromHereToPoint(currentLight.center).normalizeVector();
 		}
+
 		//kd Odλ(N ⋅L)
-		ColorType currentDiffuse 
-			= sphere.material.color
-				.multiplyColor(sphere.material.kd)
-				.multiplyColor(N.dotProduct(L)).clamp();
+		double currentDiffuse 
+			= colorValue 
+				* material.kd
+				* lightIntensity
+				* (N.dotProduct(L));
 
-		diffuseComponent.r = (currentDiffuse.r > diffuseComponent.r) ? currentDiffuse.r : diffuseComponent.r;
-		diffuseComponent.g = (currentDiffuse.g > diffuseComponent.g) ? currentDiffuse.g : diffuseComponent.g;
-		diffuseComponent.b = (currentDiffuse.b > diffuseComponent.b) ? currentDiffuse.b : diffuseComponent.b;
+		//Find the max diffuse color component.
+		diffuseComponent = (currentDiffuse > diffuseComponent) ? currentDiffuse : diffuseComponent;
 
-		
 		//H = (L + V) / ||L + V||
 		VectorType H = L.addVectors(V).multiplyVector(
 			1.0/(L.addVectors(V).vectorLength())
@@ -308,27 +316,65 @@ ColorType PictureData::shadeRay(SphereType sphere, RayType tracedRay, PointType 
 		//ks Osλ (N ⋅H)^n
 
 
-		ColorType currentSpecular
-			= sphere.material.specularHighlight
-				.multiplyColor(sphere.material.ks)
-				.multiplyColor(pow(N.dotProduct(H),sphere.material.n))
-				.clamp();
+		double currentSpecular
+			= specularValue
+				* material.ks
+				* lightIntensity
+				* (pow(N.dotProduct(H),material.n));
 
-
-		specularComponent.r = (currentSpecular.r > specularComponent.r) ? currentSpecular.r : specularComponent.r;
-		specularComponent.g = (currentSpecular.g > specularComponent.g) ? currentSpecular.g : specularComponent.g;
-		specularComponent.b = (currentSpecular.b > specularComponent.b) ? currentSpecular.b : specularComponent.b;
+		specularComponent = (currentSpecular > specularComponent) ? currentSpecular : specularComponent;
+		//specularComponent.r = (currentSpecular.r > specularComponent.r) ? currentSpecular.r : specularComponent.r;
+		//specularComponent.g = (currentSpecular.g > specularComponent.g) ? currentSpecular.g : specularComponent.g;
+		//specularComponent.b = (currentSpecular.b > specularComponent.b) ? currentSpecular.b : specularComponent.b;
 		//specularComponent.r += currentSpecular.r;
 		//specularComponent.g += currentSpecular.g;
 
 	}
 
+	return ambientComponent
+		+ diffuseComponent
+		+ specularComponent
+		;
+}
+
+ColorType PictureData::shadeRay(SphereType sphere, RayType tracedRay, PointType intersectPoint)
+{
+
+
+	ColorType results;
+
+	VectorType N = sphere.center.vectorFromHereToPoint(intersectPoint).normalizeVector();
+	//V is the unit vector towards the viewer
+	//VectorType V = eyeRay.direction.multiplyVector(-1.0).normalizeVector();
+	VectorType V = intersectPoint.vectorFromHereToPoint(eyeRay.origin).normalizeVector();
+
+	results.r = phongLighting(0
+		, sphere.material
+		, N, V
+		, intersectPoint
+		);
+
+	results.g = phongLighting(1
+		, sphere.material
+		, N, V
+		, intersectPoint
+		);
+
+	results.b = phongLighting(2
+		, sphere.material
+		, N, V
+		, intersectPoint
+		);
+
+
+
+
 
 	//return ambientComponent.addColor(diffuseComponent.addColor(specularComponent));
-	return ambientComponent
-	.addColor(diffuseComponent)
+	return results;
+	//.addColor(diffuseComponent)
 	//.addColor(specularComponent)
-	.clamp();
+	//.clamp();
 }
 
 

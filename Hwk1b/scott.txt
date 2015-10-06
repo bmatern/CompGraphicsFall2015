@@ -5,6 +5,9 @@ updir 0 1 0
 fovh 70
 imsize 640 480 
 
+
+light 0 -1 0 0 1 1 1
+light 0 -1 0 0 1 1 1
 light 0 -1 0 0 1 1 1
 
 bkgcolor 0.4 0.4 0.4 

@@ -64,6 +64,7 @@ class PictureData
 	ColorType shadeRay(SphereType sphere, RayType tracedRay, PointType intersectPoint);
 	bool isShaded(int x, int y);
 	void traceRays();
+	double phongLighting(int colorIndex, MaterialType material, VectorType N, VectorType V, PointType intersectPoint);
 };
 
 #endif
