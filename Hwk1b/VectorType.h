@@ -1,6 +1,7 @@
 #ifndef _VectorType_
 #define _VectorType_
 
+#include <math.h>
 #include "PointType.h"
 
 //forward declaration

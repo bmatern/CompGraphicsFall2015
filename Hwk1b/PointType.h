@@ -2,8 +2,8 @@
 #define _PointType_
 
 #include "VectorType.h"
+//#include "Common.h"
 
-//forward declaration, am i doing this right?  
 class VectorType;
 
 class PointType

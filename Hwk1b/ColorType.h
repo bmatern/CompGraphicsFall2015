@@ -5,6 +5,9 @@ class ColorType
 {
 	public:
 	double r, g, b;
+
+	ColorType multiplyColor(double scalar);
+	ColorType addColor(ColorType);
 };
 
 #endif

@@ -2,14 +2,14 @@
 #define _SphereType_
 
 #include "PointType.h"
-#include "ColorType.h"
+#include "MaterialType.h"
 
 class SphereType
 {
 	public:
 	PointType center;
 	double radius;
-	ColorType color;
+	MaterialType material;
 };
 
 #endif

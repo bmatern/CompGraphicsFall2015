@@ -1,4 +1,5 @@
 #include "PointType.h"
+//#include "VectorType.h"
 
 VectorType PointType::getVectorFromPoint()
 {

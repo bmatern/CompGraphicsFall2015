@@ -6,19 +6,24 @@
 #include <fstream>
 #include <string>
 #include <vector>
-#include "ColorType.h"
+#include "RayType.h"
+#include "SphereType.h"
+#include "PictureData.h"
 
 using namespace std;
 
+class PictureData;
+
 class Common
-{
+{ 
 	public:
 
 	static string trim(string);
 	static vector<string> tokenizeString(string);
 	static string getInputFileName(int, char*[]);
-	static void writeImageFile(ColorType[], int, int, string);
+	static void writeImageFile(PictureData data);
 	static bool thresholdCompare(double, double);
+	static double intersectSphere(RayType ray, SphereType sphere);
 };
 
 #endif
