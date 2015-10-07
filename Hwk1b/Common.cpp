@@ -1,5 +1,35 @@
 #include "Common.h"
 
+void Common::createImage(string inputFileName)
+{
+	PictureData pictureConfig;
+
+	pictureConfig.inputFileName = inputFileName;
+	//cout << "Input:" << pictureConfig.inputFileName << ":\n";
+
+//Read input file to get the scene information.
+	try
+	{
+		pictureConfig.loadSceneInformation();
+	}
+	catch(int e)
+	{
+		cout << "Exception occured during loadSceneInformation.  Doublecheck your input file.  Cannot recover." << endl;
+		//return(0);
+	}
+
+//Perform necessary preliminary calculations.
+//Set up the viewing window etc.
+	//cout << "Starting Preliminary Calculations" << endl;
+	pictureConfig.setViewingWindow();
+
+//foreach pixel in image array, trace a ray
+	pictureConfig.traceRays();
+	
+//Write the data to a image file.
+	Common::writeImageFile(pictureConfig);
+}
+
 double Common::intersectSphere(RayType inputRay, SphereType inputSphere)
 {
 	//find the location of the intersection between a ray and a sphere.
@@ -126,8 +156,8 @@ string Common::getInputFileName(int argc, char *argv[])
 	}
 	else
 	{
-		cout << "You should have exactly one argument, the input file name.  Using default filename instead.\n";
-		inputFileName = "example_input.txt";
+		cout << "You should have exactly one argument, the input file name.  Running Demos.\n";
+		inputFileName = "";
 	}
 	return inputFileName;
 }

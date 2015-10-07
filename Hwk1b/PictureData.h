@@ -55,7 +55,8 @@ class PictureData
 	string inputFileName;
 
 	//an array of colors for the output pixels.
-	ColorType* pixelArray;
+	//ColorType* pixelArray;
+	vector<ColorType> pixelArray;
 
 	//Method to set the viewing window.
 	void loadSceneInformation();

@@ -18,6 +18,7 @@ class Common
 { 
 	public:
 
+	static void createImage(string inputFileName);
 	static string trim(string);
 	static vector<string> tokenizeString(string);
 	static string getInputFileName(int, char*[]);

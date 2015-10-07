@@ -26,7 +26,7 @@ void PictureData::loadSceneInformation()
 						eyeRay.origin.x = stod(tokens[1]);
 						eyeRay.origin.y = stod(tokens[2]);
 						eyeRay.origin.z = stod(tokens[3]);		
-						cout << "Eye Found " << eyeRay.origin.x << "," << eyeRay.origin.y << "," << eyeRay.origin.z << endl;	
+						//cout << "Eye Found " << eyeRay.origin.x << "," << eyeRay.origin.y << "," << eyeRay.origin.z << endl;	
 
 					}		
 					else if(inputVarName.compare("viewdir") == 0)
@@ -90,10 +90,10 @@ void PictureData::loadSceneInformation()
 
 						currentMaterial.n = stod(tokens[10]);
 
-						cout << "Read a material. rgb=" << currentMaterial.color.r << "," << currentMaterial.color.g << "," << currentMaterial.color.b
+						/*cout << "Read a material. rgb=" << currentMaterial.color.r << "," << currentMaterial.color.g << "," << currentMaterial.color.b
 							<< " specular = " << currentMaterial.specularHighlight.r << "," << currentMaterial.specularHighlight.g << "," << currentMaterial.specularHighlight.b 
 							<< " ka=" << currentMaterial.ka << " kd=" << currentMaterial.kd << " ks=" << currentMaterial.ks << " n=" << currentMaterial.n
-							<< endl;
+							<< endl;*/
 					}
 					else if(inputVarName.compare("sphere") == 0)
 					{
@@ -110,11 +110,11 @@ void PictureData::loadSceneInformation()
 					}
 					else if(inputVarName.compare("light") == 0)
 					{
-						cout << "Light source Found" << endl;
+						//cout << "Light source Found" << endl;
 						LightType currentLight;
 
 						bool isDirectional = (stoi(tokens[4])==0);	
-						cout << "isDirectional" << isDirectional << endl;;	
+						//cout << "isDirectional" << isDirectional << endl;;	
 						currentLight.isDirectional = isDirectional;
 
 						if(isDirectional)	
@@ -183,7 +183,7 @@ void PictureData::setViewingWindow()
 	// w is the width of the viewing window.  In 3d world coordinate units.
 	// I need to calculate w based on the tangent of fovH and d.  Algebra and trig yield this equation:
 	// w = 2 * d * tan (fovH / 2)
-	w = 2.0 * d * tan (fovH / 2);
+	w = 2.0 * d * tan ((M_PI/180)*fovH / 2);
 	// calculate h, in world coordinates.  Use the aspect ratio calculated from the width and height in pixels.
 	h = w * height / width ;
 	
@@ -217,12 +217,12 @@ void PictureData::setViewingWindow()
 		v.multiplyVector(-h/2)).addVectors(
 		u.multiplyVector(w/2)).getPointFromVector();
 			
-	cout << "Double check the aspect ratios to see that they match." << endl;
+	/*cout << "Double check the aspect ratios to see that they match." << endl;
 	double pixAspRat = 1.0 * width /height;
 	cout << "Pixel aspect ratio:" << pixAspRat << endl;
 	double worldAspRat = (viewingWindow.botLeft.vectorFromHereToPoint(viewingWindow.botRight).vectorLength())
 		/ (viewingWindow.botLeft.vectorFromHereToPoint(viewingWindow.topLeft).vectorLength());
-	cout << "World aspect ratio:" << worldAspRat << endl;
+	cout << "World aspect ratio:" << worldAspRat << endl;*/
 
 	//deltaH and deltaV are VECTORS.  they indicate how far to increment the viewing window for each pixel.
 	//deltaH = (ur - ul)/(pixwidth - 1)
@@ -230,7 +230,7 @@ void PictureData::setViewingWindow()
 	deltaV = viewingWindow.topLeft.vectorFromHereToPoint(viewingWindow.botLeft).multiplyVector(1.0/(height - 1));
 
 
-	pixelArray =new ColorType[width*height];
+	pixelArray = vector<ColorType>(width*height);
 }
 
 bool PictureData::isShaded(PointType origin, VectorType L, LightType light)
@@ -449,7 +449,7 @@ void PictureData::traceRays()
 //foreach pixel in image array:
 	//call trace_ray() with appropriate parameters
 	//Use value returend by trace_ray to update pixel colors.
-	cout << "Starting the loop through each pixel" << endl;
+	//cout << "Starting the loop through each pixel" << endl;
 	for(int y = 0; y < height; y++)
 	{
 		for(int x = 0; x < width; x++)
