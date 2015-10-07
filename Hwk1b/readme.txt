@@ -21,16 +21,21 @@ I have here a brief description of how they demonstrate the functionality of my 
 Use the images as references.
 
 ShiftCameraDemo.ppm
-	-This demo shifts the camera along the x and y axes.  
+	-This demo shifts the camera along the x and y axes. 
+	-This demonstrates what happens when the camera moves
 ShiftLightSourceDemo.ppm
 	-This demo Shifts the light source along the y axis.
+	-The movement of the specular light is most obvious..
 ShiftUpVectorDemo.ppm
 	-This demo changes the up vector, with comical results.
+	-I only really rotated the z value, other up vectors are possible.
 AdjustSurfaceDemo.ppm
 	-This demo changes the surface properties of the spheres.  
 	-Ka is decreased in red spheres.  Kd is decreased in the blue spheres.  ks is decreased in the green spheres.
+	-This demonstrates the differences in surface constants.
 ShiftFOV.ppm
 	-The FOV is altered, from 20 to 173.
+	-When FOV is small, the image is "zoomed in" on what is directly in front of us.
 
 
 
