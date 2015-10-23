@@ -1,10 +1,76 @@
 #include "PictureData.h"
 
+void PictureData::createImage(string ifn)
+{
+	//PictureData pictureConfig;
+
+	inputFileName = ifn;
+	//cout << "Input:" << pictureConfig.inputFileName << ":\n";
+
+//Read input file to get the scene information.
+	try
+	{
+		loadSceneInformation();
+	}
+	catch(int e)
+	{
+		cout << "Exception occured during loadSceneInformation.  Doublecheck your input file.  Cannot recover." << endl;
+		//return(0);
+	}
+
+//Perform necessary preliminary calculations.
+//Set up the viewing window etc.
+	//cout << "Starting Preliminary Calculations" << endl;
+	setViewingWindow();
+
+//foreach pixel in image array, trace a ray
+	traceRays();
+	
+//Write the data to a image file.
+	writeImageFile();
+}
+
+void PictureData::writeImageFile()
+{
+	string widthString = to_string(width);
+	string heightString = to_string(height);
+
+	string outputFileName = inputFileName.substr(0,inputFileName.length()-4) + ".ppm";
+
+	//Write image File
+	ofstream myfile;
+	myfile.open (outputFileName);
+
+	//Write Header
+	myfile << "P3\n";
+	myfile << "# This image was created by Ben Matern from input file " << inputFileName << "\n";
+	myfile << widthString + " " + heightString + "\n";
+	myfile << "255\n";
+
+	//Loop through each pixel in the picture.
+	for(int y = 0; y < height ; y++)
+	{
+		for(int x = 0; x < width ; x++)
+		{
+			string r = Common::getColorValue(pixelArray[ x + y*width ].r);
+			string b = Common::getColorValue(pixelArray[ x + y*width ].b);
+			string g = Common::getColorValue(pixelArray[ x + y*width ].g);
+			myfile << r << g << b;
+		}
+		//We just finished a row of pixels.
+		myfile << "\n";
+	}
+
+	myfile << "";
+	myfile.close();
+}
+
 void PictureData::loadSceneInformation()
 {
 	//read input file to determine the components of the scene.
 	string line;
 	ifstream myInputfile (inputFileName);
+	cout << "About to open file:" <<inputFileName << endl;
 	if (myInputfile.is_open())
 	{
 		cout << "Input File Found.  Good.\n";
@@ -206,25 +272,25 @@ void PictureData::setViewingWindow()
 	//ll = view_origin + d⋅n – h/2⋅v – w/2⋅u
 	//lr = view_origin + d⋅n – h/2⋅v + w/2⋅u
 	viewingWindow.topLeft = 
-		eyeRay.origin.getVectorFromPoint().addVectors(
+		Common::getPointFromVector(Common::getVectorFromPoint(eyeRay.origin).addVectors(
 		n.multiplyVector(d)).addVectors(
 		v.multiplyVector(h/2)).addVectors(
-		u.multiplyVector(-w/2)).getPointFromVector();		
+		u.multiplyVector(-w/2)));		
 	viewingWindow.topRight = 
-		eyeRay.origin.getVectorFromPoint().addVectors(
+		Common::getPointFromVector(Common::getVectorFromPoint(eyeRay.origin).addVectors(
 		n.multiplyVector(d)).addVectors(
 		v.multiplyVector(h/2)).addVectors(
-		u.multiplyVector(w/2)).getPointFromVector();
+		u.multiplyVector(w/2)));
 	viewingWindow.botLeft = 
-		eyeRay.origin.getVectorFromPoint().addVectors(
+		Common::getPointFromVector(Common::getVectorFromPoint(eyeRay.origin).addVectors(
 		n.multiplyVector(d)).addVectors(
 		v.multiplyVector(-h/2)).addVectors(
-		u.multiplyVector(-w/2)).getPointFromVector();		
+		u.multiplyVector(-w/2)));		
 	viewingWindow.botRight = 
-		eyeRay.origin.getVectorFromPoint().addVectors(
+		Common::getPointFromVector(Common::getVectorFromPoint(eyeRay.origin).addVectors(
 		n.multiplyVector(d)).addVectors(
 		v.multiplyVector(-h/2)).addVectors(
-		u.multiplyVector(w/2)).getPointFromVector();
+		u.multiplyVector(w/2)));
 			
 	/*cout << "Double check the aspect ratios to see that they match." << endl;
 	double pixAspRat = 1.0 * width /height;
@@ -235,8 +301,8 @@ void PictureData::setViewingWindow()
 
 	//deltaH and deltaV are VECTORS.  they indicate how far to increment the viewing window for each pixel.
 	//deltaH = (ur - ul)/(pixwidth - 1)
-	deltaH = viewingWindow.topLeft.vectorFromHereToPoint(viewingWindow.topRight).multiplyVector(1.0/(width - 1));
-	deltaV = viewingWindow.topLeft.vectorFromHereToPoint(viewingWindow.botLeft).multiplyVector(1.0/(height - 1));
+	deltaH = Common::vectorFromHereToPoint(viewingWindow.topLeft,viewingWindow.topRight).multiplyVector(1.0/(width - 1));
+	deltaV = Common::vectorFromHereToPoint(viewingWindow.topLeft,viewingWindow.botLeft).multiplyVector(1.0/(height - 1));
 
 
 	pixelArray = vector<ColorType>(width*height);
@@ -266,7 +332,7 @@ bool PictureData::isShaded(PointType origin, VectorType L, LightType light)
 			{
 				//this is a point light.
 				//is the intersection beyond the light source?
-				double distanceToLightSource = origin.vectorFromHereToPoint(light.center).vectorLength();
+				double distanceToLightSource = Common::vectorFromHereToPoint(origin,light.center).vectorLength();
 				if(distanceToLightSource > t)
 				{
 					return true;
@@ -335,7 +401,7 @@ double PictureData::phongLighting(int colorIndex, MaterialType material, VectorT
 		}
 		else
 		{
-			L = intersectPoint.vectorFromHereToPoint(currentLight.center).normalizeVector();
+			L = Common::vectorFromHereToPoint(intersectPoint,currentLight.center).normalizeVector();
 		}
 
 
@@ -385,10 +451,10 @@ ColorType PictureData::shadeRay(SphereType sphere, RayType tracedRay, PointType 
 {
 	ColorType results;
 
-	VectorType N = sphere.center.vectorFromHereToPoint(intersectPoint).normalizeVector();
+	VectorType N = Common::vectorFromHereToPoint(sphere.center,intersectPoint).normalizeVector();
 	//V is the unit vector towards the viewer
 	//VectorType V = eyeRay.direction.multiplyVector(-1.0).normalizeVector();
-	VectorType V = intersectPoint.vectorFromHereToPoint(eyeRay.origin).normalizeVector();
+	VectorType V = Common::vectorFromHereToPoint(intersectPoint,eyeRay.origin).normalizeVector();
 
 	results.r = phongLighting(0
 		, sphere.material
@@ -419,13 +485,14 @@ ColorType PictureData::traceRay(int x, int y)
 	//This is the mapping to the world coordinate point.
 	//topleft + deltaH*x + deltaV * y
 	PointType worldCoordinatesPoint = 
-		viewingWindow.topLeft.getVectorFromPoint().addVectors(
+		Common::getPointFromVector(
+		Common::getVectorFromPoint(viewingWindow.topLeft).addVectors(
 		deltaH.multiplyVector(x)).addVectors(
-		deltaV.multiplyVector(y)).getPointFromVector();
+		deltaV.multiplyVector(y)));
 		
 	RayType rayToTrace;
 	rayToTrace.origin = eyeRay.origin;
-	rayToTrace.direction = rayToTrace.origin.vectorFromHereToPoint(worldCoordinatesPoint).normalizeVector();
+	rayToTrace.direction = Common::vectorFromHereToPoint(rayToTrace.origin,worldCoordinatesPoint).normalizeVector();
 			
 	//determine intersection points with each sphere.
 	double intersectDistance = -1;
@@ -445,7 +512,9 @@ ColorType PictureData::traceRay(int x, int y)
 	if(intersectDistance != -1)
 	{
 		//It's hit.
-		PointType intersectPoint = rayToTrace.direction.multiplyVector(intersectDistance).addVectors(rayToTrace.origin).getPointFromVector();
+		PointType intersectPoint = Common::getPointFromVector(
+			rayToTrace.direction.multiplyVector(intersectDistance)
+			.addVectors(Common::getVectorFromPoint(rayToTrace.origin)));
 		results = shadeRay(intersectSphere, rayToTrace, intersectPoint);
 
 	}

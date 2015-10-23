@@ -4,7 +4,8 @@
 #include "PointType.h"
 #include "MaterialType.h"
 
-class MaterialType;
+//class MaterialType;
+//class PointType;
 
 class SphereType
 {

@@ -1,5 +1,5 @@
 rm BenMaternHwk1
-g++ -o BenMaternHwk1 CreateImage.cpp PointType.cpp VectorType.cpp Common.cpp PictureData.cpp ColorType.cpp Demos.cpp MaterialType.cpp
+g++ -o BenMaternHwk1 PointType.cpp ColorType.cpp VectorType.cpp PictureData.cpp Demos.cpp MaterialType.cpp Common.cpp  CreateImage.cpp
 
 ./BenMaternHwk1 bens_image.txt
 #./BenMaternHwk1 adam.txt

@@ -1,15 +1,4 @@
 #include "VectorType.h"
-//#include "PointType.h"
-
-PointType VectorType::getPointFromVector()
-{
-	//This is the point at the tip of a vector, if assumed to originate at 0,0,0
-	PointType results;
-	results.x = x;
-	results.y = y;
-	results.z = z;
-	return results;
-}
 
 double VectorType::dotProduct(VectorType secondVector)
 {
@@ -73,8 +62,8 @@ VectorType VectorType::addVectors(VectorType secondVector)
 	return results;
 }
 
-VectorType VectorType::addVectors(PointType originPoint)
+/*VectorType VectorType::addVectors(PointType originPoint)
 {
 	//If we need to add a vector to a point.
-	return addVectors(originPoint.getVectorFromPoint());
-}
+	return addVectors(Common::getVectorFromPoint(originPoint));
+}*/

@@ -3,6 +3,8 @@
 
 #include "PointType.h"
 
+//class PointType;
+
 class ViewingWindowType
 {
 	public:

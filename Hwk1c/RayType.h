@@ -4,6 +4,8 @@
 #include "VectorType.h"
 #include "PointType.h"
 
+//class PointType, VectorType;
+
 class RayType
 {
 	public:

@@ -5,6 +5,10 @@
 #include "VectorType.h"
 #include "ColorType.h"
 
+//class PointType;
+//class VectorType;
+//class ColorType;
+
 class LightType
 {
 	public:

@@ -16,6 +16,8 @@
 
 using namespace std;
 
+//class MaterialType;
+
 
 class PictureData
 {
@@ -59,6 +61,9 @@ class PictureData
 	vector<ColorType> pixelArray;
 
 	//Method to set the viewing window.
+	void createImage(string inputFileName);
+	void writeImageFile();
+
 	void loadSceneInformation();
 	void setViewingWindow();
 	ColorType traceRay(int x, int y);

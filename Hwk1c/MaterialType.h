@@ -10,6 +10,9 @@
 
 using namespace std;
 
+//class ColorType;
+//class Common;
+
 class MaterialType
 {
 	public:
