@@ -31,6 +31,82 @@ VectorType Common::vectorFromHereToPoint(PointType firstPoint, PointType secondP
 }
 
 
+TextureType Common::loadTexture(string filename)
+{
+	TextureType results;
+	results.textureFilename = filename;
+	//cout << "Loading Texture: " << results.textureFilename << endl;
+
+	string line;
+	ifstream myInputfile (results.textureFilename);
+	if (myInputfile.is_open())
+	{
+		//cout << "Texture file "<< results.textureFilename << " found.  Good.\n";
+		string line1, line2;//, line3, line4;
+		getline(myInputfile, line1);
+		getline(myInputfile, line2);
+		//getline(myInputfile, line3);
+		//getline(myInputfile, line4);
+		if(line1.compare("P3") != 0)
+		{
+			cout << "I expected P3 on the first line." << endl;
+		}
+		//cout << "line1:" << line1 << endl;
+		//cout << "line2:" << line2 << endl;
+
+		vector<string> paramTokens = tokenizeString(line2, " ");
+		int width = stoi(paramTokens[0]);
+		int height = stoi(paramTokens[1]);
+		int maxColorValue = stoi(paramTokens[2]);
+		//cout << "width:" << width << ",height:" << height << ",maxColor:"<<maxColorValue << endl;
+
+		if(width != height)
+		{
+			cout <<"width and height for the texture should be equal.  I'm making a square using the smaller of the dimensions." << endl;
+			results.dimension = (width < height)?width:height;
+		}
+		else
+		{
+			//cout <<"width and height are equal.  Good." << endl;
+			results.dimension = height;
+		}
+		//cout << "line3:" << line3 << endl;
+		//cout << "line4:" << line4 << endl;
+		while ( getline (myInputfile,line) )
+	    {
+	    	vector<string> tokens = tokenizeString(line, " ");
+	    	int tokenCount = tokens.size() ;
+	    	//cout << "tokencount:"  << tokenCount << endl;
+
+	    	//Pull out the RGB values from the texture file.
+	    	for(int i = 0; i < tokenCount; i=i+3)
+	    	{
+	    		ColorType currentPixel;
+	    		currentPixel.r = stod(tokens[i]);
+	    		currentPixel.g = stod(tokens[i+1]);
+	    		currentPixel.b = stod(tokens[i+2]);
+	    		
+	    		results.pixelArray.push_back(currentPixel);
+	    	}
+	    	//Common::t
+	    	//cout << "Done"  << tokenCount << endl;
+
+	    	//cout << "line:" << endl;
+	    }
+	   //cout <<"Number Pixels in Texture: " << results.pixelArray.size() << endl;
+	    //cout<<"Closing Input"<<endl;
+		myInputfile.close();
+	}
+    else
+    {
+    	cout << "Unable to open texture file.  \n";
+		//-cout << "width:" << width << "\nheight:" << height <<  "\n";
+    }
+
+    return results;
+
+}
+
 double Common::intersectSphere(RayType inputRay, SphereType inputSphere)
 {
 	//find the location of the intersection between a ray and a sphere.
@@ -78,7 +154,7 @@ double Common::intersectSphere(RayType inputRay, SphereType inputSphere)
 			return ( t1<t2 ? t1 : t2);
 		}
 	}
-	else if (discriminant == 0)
+	else if (thresholdEquals(discriminant,0))
 	{
 		//cout << "1 solution found" << endl;
 		//Don't reckon this'll happen much.  Graze the edge of the sphere.  1 solution.
@@ -88,9 +164,109 @@ double Common::intersectSphere(RayType inputRay, SphereType inputSphere)
 	}
 	else
 	{
+		//cout <<"NO INTERSECTION, INTERSECT DISTANCE SHOULD BE -1" << endl;
 		//discriminant is negative.  No solution.  No intersection.
 		return -1;
 	}
+}
+
+double Common::intersectFace(RayType inputRay, FaceType inputFace)
+{
+	//cout <<"Attempting a face intersection" << endl;
+	//find the location of the intersection between a ray and a triangle face.
+	//return the distance to the intersection.
+	//return -1 if there is no intersection.
+
+	//determine plane equation.
+	//Let the vector e1 be defined along the edge from p0 to p1
+	//Let the vector e2 be defined along the edge from p0 to p2
+	//Let the vector n be defined by the cross product of e1 and e2
+	//That's annoying, now these vector names are 1 based, and points are 0 based.  
+	//WTF?  Consistency?  Nah.
+
+	double denominator = (inputFace.A * inputRay.direction.x) + (inputFace.B * inputRay.direction.y) + (inputFace.C * inputRay.direction.z);
+	//cout << "den:" << denominator << endl;
+	double numerator = 0 - ((inputFace.A * inputRay.origin.x) + (inputFace.B * inputRay.origin.y) + (inputFace.C * inputRay.origin.z) + inputFace.D);
+	if(thresholdEquals(denominator,0))
+	{
+		//if the denominator is zero, the ray grazes the plane, never intersects.
+		//cout << "Demonimator is 0." << endl;
+		return -1;
+	}
+	else
+	{
+		double t = numerator / denominator;
+		if(thresholdEquals(t,0))
+		{
+			//cout << "Intersect at t=0" << endl;
+			//if t is 0, the ray intersects at the ray's origin.  That doesn't count.
+			return -1;
+		}
+		else if (t < 0)
+		{
+			//cout << "Negative T" << endl;
+			//object is behind the eye.  No intersection.
+			return -1;
+		}
+		else
+		{
+			//cout << "Plane intersection found.  Will determine if it is a triangle intersection." << endl;
+			//We have to check if the intersection point is actually inside the triangle.
+			//Calculate barycentric coordinates.
+			// The area of an arbitrary triangle can also be
+			//computed as half of the length of the cross
+			//product of the vectors describing any two of
+			//its sides:
+			//wait, N is a normal vector.  Already have that.
+			PointType intersectionPoint;
+			//px = (x0 + t⋅xd)
+			//py = (y0 + t⋅yd)
+			//pz = (z0 + t⋅zd)
+			intersectionPoint.x = inputRay.origin.x + t * inputRay.direction.x;
+			intersectionPoint.y = inputRay.origin.y + t * inputRay.direction.y;
+			intersectionPoint.z = inputRay.origin.z + t * inputRay.direction.z;
+
+			VectorType n = inputFace.e1.crossProduct(inputFace.e2);//.normalize();
+			double totalArea = n.vectorLength() / 2;
+			VectorType centerV1 = vectorFromHereToPoint(intersectionPoint, inputFace.v1);
+			VectorType centerV2 = vectorFromHereToPoint(intersectionPoint, inputFace.v2);
+			VectorType centerV3 = vectorFromHereToPoint(intersectionPoint, inputFace.v3);
+
+			double areaA = centerV1
+				.crossProduct(centerV2).vectorLength()/2;
+			double areaB = centerV1
+				.crossProduct(centerV3).vectorLength()/2;
+			double areaC = centerV2
+				.crossProduct(centerV3).vectorLength()/2;
+
+			double alpha = areaA / totalArea;
+			double beta = areaB / totalArea;
+			double gamma = areaC / totalArea;
+
+			//cout <<"sumArea:" << (areaA + areaB + areaC) << endl;
+			//cout <<"sumGreek:" << (alpha + beta + gamma) << endl;
+			//cout <<"totalArea:" << totalArea << endl;
+
+			//I know that the point is outside the traingle if any of alpha,beta, or gamma 
+			//is < 0 or > 1
+			if(alpha > 1 || beta > 1 || gamma > 1 || alpha < 0 || beta < 0 || gamma < 0)
+			{
+				//cout << "outside triangle" << endl;
+				return -1;
+			}
+
+			//if (alpha + beta + gamma == 1) {
+			// point is in triangle
+			if(thresholdEquals((alpha+ beta + gamma),1))
+			{
+				//cout <<"Triangle intersection found." << endl;
+				return t;
+			}
+
+		}
+	}
+	//I don't think we should get here.  But if there's a problem, assume no intersect.
+	return -1;
 }
 
 double Common::clamp(double input)
@@ -109,7 +285,7 @@ string Common::trim(string str)
     return result;
 }
 
-vector<string> Common::tokenizeString(string input)
+vector<string> Common::tokenizeString(string input, string delimiter)
 {
 	//split a string by a space delimiter.
 	//returns a vector of token strings.
@@ -120,7 +296,7 @@ vector<string> Common::tokenizeString(string input)
 	while(true)
 	{
 		//cout << "tokenizing this:" << tokenBuffer << "\n";
-		spaceLocation = tokenBuffer.find(" ");
+		spaceLocation = tokenBuffer.find(delimiter);
 		if(spaceLocation < 1)
 		{
 			if(tokenBuffer.length() > 0)
@@ -135,7 +311,8 @@ vector<string> Common::tokenizeString(string input)
 		{
 			string token = tokenBuffer.substr(0, spaceLocation);
 			//cout << "Token found:" << token << "\n";
-			tokenBuffer = tokenBuffer.substr(spaceLocation + 1, tokenBuffer.length());
+			//tokenBuffer = tokenBuffer.substr(spaceLocation + 1, tokenBuffer.length());
+			tokenBuffer = tokenBuffer.substr(spaceLocation + delimiter.length(), tokenBuffer.length());
 			tokenBuffer = trim(tokenBuffer);
 			//cout << "new Buffer:" << tokenBuffer << "\n";
 			
@@ -172,10 +349,6 @@ string Common::getColorValue(double colorValue)
 	return to_string(roundedInt) + " ";
 }
 
-
-
-
-
 bool Common::thresholdEquals(double a, double b)
 {
 	//Matt suggested we use a threshold compare, rather than direct equals.
@@ -185,5 +358,7 @@ bool Common::thresholdEquals(double a, double b)
 	//Pick a small epsilon as a threshold
 	//I apparenlty arbitrarily chose 10^-6
 	double epsilon = .000001;
-	return (a-b < epsilon);
+	double comparison = (a>b)?a-b:b-a;
+	//cout << "Attempting a comparison,a,b: " <<comparison<<","<< a << "," << b << endl;
+	return (comparison < epsilon);
 }

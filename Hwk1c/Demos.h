@@ -10,6 +10,8 @@ class Demos
 {
 	public:
 
+	static void generateTextures();
+	static void writeTexture(TextureType inputTexture);
 	static PictureData stitchImages(vector <vector <ColorType> > images, int width, int height);
 	static void shiftCameraDemo();
 	static void shiftLightSource();

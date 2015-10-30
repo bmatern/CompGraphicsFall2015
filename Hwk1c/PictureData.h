@@ -13,6 +13,8 @@
 #include "RayType.h"
 #include "SphereType.h"
 #include "Common.h"
+#include "TextureCoordinateType.h"
+#include "FaceType.h"
 
 using namespace std;
 
@@ -37,9 +39,18 @@ class PictureData
 	VectorType v;	
 	
 	ColorType bgColor;
+	
 	MaterialType currentMaterial;
+	int currentTextureIndex;
 	
 	vector<SphereType> spheres;
+	vector<PointType> vertices;
+	vector<TextureCoordinateType> textureCoordinates;
+	vector<FaceType> faces;
+	vector<VectorType> vertexNormals;
+
+	//vector<MaterialType> materials;
+	vector<TextureType> textures;
 
 	vector<LightType> lights;
 	
@@ -60,6 +71,8 @@ class PictureData
 	//ColorType* pixelArray;
 	vector<ColorType> pixelArray;
 
+	bool isParallel;
+
 	//Method to set the viewing window.
 	void createImage(string inputFileName);
 	void writeImageFile();
@@ -68,9 +81,13 @@ class PictureData
 	void setViewingWindow();
 	ColorType traceRay(int x, int y);
 	ColorType shadeRay(SphereType sphere, RayType tracedRay, PointType intersectPoint);
+	ColorType shadeRay(FaceType face, RayType tracedRay, PointType intersectPoint);
 	bool isShaded(PointType origin, VectorType L, LightType light);
 	void traceRays();
 	double phongLighting(int colorIndex, MaterialType material, VectorType N, VectorType V, PointType intersectPoint);
+
+	ColorType assignTextureColor(SphereType sphere, PointType intersectPoint, VectorType N);
+	ColorType assignTextureColor(FaceType inputSphere, PointType intersectPoint, VectorType N, double alpha, double beta, double gamma);
 };
 
 #endif

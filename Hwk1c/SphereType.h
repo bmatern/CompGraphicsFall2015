@@ -13,6 +13,7 @@ class SphereType
 	PointType center;
 	double radius;
 	MaterialType material;
+	//materialIndex;
 };
 
 #endif

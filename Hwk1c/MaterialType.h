@@ -3,10 +3,11 @@
 
 //#include "Common.h"
 #include "ColorType.h"
+//#include "TextureType.h"
 #include <string>
 #include <iostream>
 #include <fstream>
-#include <vector>
+
 
 using namespace std;
 
@@ -17,9 +18,9 @@ class MaterialType
 {
 	public:
 
-	bool hasTexture;
-	string textureFilename;
-	vector<ColorType> texturePixelArray;
+	//bool hasTexture;
+	int textureIndex;
+	//TextureType texture;
 	ColorType color;
 
 	//Osλ is the color of the specular highlight.
@@ -33,7 +34,7 @@ class MaterialType
 	//maybe 2 -> 100
 	int n;
 
-	void loadTexture();
+
 
 };
 

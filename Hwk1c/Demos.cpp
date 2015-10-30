@@ -1,5 +1,107 @@
 #include "Demos.h"
 
+void Demos::generateTextures()
+{
+	ColorType white, black;
+	white.r = 255;
+	white.g = 255;
+	white.b = 255;
+
+	ColorType red,green,blue,yellow;
+	red.r = 255;
+	green.g = 255;
+	blue.b = 255;
+	yellow.r = 255;
+	yellow.g = 255;
+
+
+	//TEXTURE 1 is a checkerboard with black and white checkers.
+	//The first one is a red checker.  Top left.
+	//Top Right is BLUE.
+	//lower left yellow.
+	//lower right green.
+	TextureType texture1;
+	texture1.dimension = 9;
+	texture1.textureFilename = "texture1.ppm";
+
+	//the 1st pixel
+	texture1.pixelArray.push_back(red);
+	for(int i = 0; i < 40; i++)
+	{
+		texture1.pixelArray.push_back(white);
+		//texture1.pixelArray[texture1.pixelArray.size() -1].r = i;
+		texture1.pixelArray.push_back(black);
+	}
+	texture1.pixelArray[8] = blue;
+	texture1.pixelArray[72] = yellow;
+	texture1.pixelArray[80] = green;
+
+	writeTexture(texture1);
+
+
+
+
+	//Texture 2 is a 4x4 texture with 4 vertical lines, red, green, blue, yellow.
+	TextureType texture2;
+	texture2.dimension = 4;
+	texture2.textureFilename = "texture2.ppm";
+
+
+	for(int i = 0; i < 4; i++)
+	{
+		texture2.pixelArray.push_back(red);
+		texture2.pixelArray.push_back(green);
+		texture2.pixelArray.push_back(blue);
+		texture2.pixelArray.push_back(yellow);
+	}
+	writeTexture(texture2);
+
+
+}
+
+void Demos::writeTexture(TextureType inputTexture)
+{
+	cout << "Writing a texture file: " << inputTexture.textureFilename << endl;
+	string widthString = to_string(inputTexture.dimension);
+	//string heightString = to_string(height);
+
+	string outputFileName = inputTexture.textureFilename;
+
+	//Write image File
+	ofstream myfile;
+	myfile.open (outputFileName);
+
+	//Write Header
+	myfile << "P3\n";
+	//myfile << "# This image was created by Ben Matern from input file " << inputFileName << "\n";
+	myfile << widthString << " " << widthString << " 255" << endl;
+	//myfile << "255\n";
+
+	//Loop through each pixel in the picture.
+	for(int i = 0; i < inputTexture.pixelArray.size(); i++)
+	//for(int y = 0; y < inputTexture.dimension ; y++)
+	{
+		//for(int x = 0; x < inputTexture.dimension ; x++)
+		{
+			int r_ = round(inputTexture.pixelArray[i].r);
+			int g_ = round(inputTexture.pixelArray[i].g);
+			int b_ = round(inputTexture.pixelArray[i].b);
+			string r = to_string(r_) + " ";
+			string g = to_string(g_) + " ";
+			string b = to_string(b_) + " ";
+			//string b = Common::getColorValue(inputTexture.pixelArray[ x + y*inputTexture.dimension ].b);
+			//string g = Common::getColorValue(inputTexture.pixelArray[ x + y*inputTexture.dimension ].g);
+			myfile << r << g << b;
+			myfile << "\n";
+		}
+		//We just finished a row of pixels.
+		//myfile << "\n";
+	}
+
+	myfile << "";
+	myfile.close();
+}
+
 void Demos::shiftFOV()
 {
 	PictureData pictureConfig;
@@ -59,10 +161,14 @@ void Demos::adjustSurface()
 		pictureConfig.spheres[4].material.kd = pictureConfig.spheres[4].material.kd * .8;
 		pictureConfig.spheres[5].material.ks = pictureConfig.spheres[5].material.ks * .8;
 		pictureConfig.spheres[6].material.ks = pictureConfig.spheres[6].material.ks * .8;
-		
+
+		/*pictureConfig.materials[pictureConfig.spheres[1].materialIndex].ka = pictureConfig.materials[pictureConfig.spheres[1].materialIndex].ka * .8;
+		pictureConfig.materials[pictureConfig.spheres[2].materialIndex].ka = pictureConfig.materials[pictureConfig.spheres[2].materialIndex].ka * .8;
+		pictureConfig.materials[pictureConfig.spheres[3].materialIndex].kd = pictureConfig.materials[pictureConfig.spheres[3].materialIndex].kd * .8;
+		pictureConfig.materials[pictureConfig.spheres[4].materialIndex].kd = pictureConfig.materials[pictureConfig.spheres[4].materialIndex].kd * .8;
+		pictureConfig.materials[pictureConfig.spheres[5].materialIndex].ks = pictureConfig.materials[pictureConfig.spheres[5].materialIndex].ks * .8;
+		pictureConfig.materials[pictureConfig.spheres[6].materialIndex].ks = pictureConfig.materials[pictureConfig.spheres[6].materialIndex].ks * .8;	*/
 	}
-
-
 
 	PictureData stitchedImage = stitchImages(images, pictureConfig.width, pictureConfig.height);
 	stitchedImage.inputFileName = "AdjustSurfaceDemo.txt";

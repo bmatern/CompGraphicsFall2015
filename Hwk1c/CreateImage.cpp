@@ -14,11 +14,12 @@ using namespace std;
 
 void runDemos()
 {
-	Demos::shiftCameraDemo();
-	Demos::shiftLightSource();
-	Demos::shiftUpVector();
-	Demos::shiftFOV();
-	Demos::adjustSurface();
+	//Demos::shiftCameraDemo();
+	//Demos::shiftLightSource();
+	//Demos::shiftUpVector();
+	//Demos::shiftFOV();
+	//Demos::adjustSurface();
+	Demos::generateTextures();
 }
 
 int main( int argc, char *argv[] )
