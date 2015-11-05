@@ -11,9 +11,33 @@ void Demos::generateTextures()
 	red.r = 255;
 	green.g = 255;
 	blue.b = 255;
+
 	yellow.r = 255;
 	yellow.g = 255;
 
+	ColorType lightYellow, lightBlue, lightGreen, lightRed;
+	lightYellow.r = 255;
+	lightYellow.g = 250;
+	lightYellow.b = 205;
+
+	lightBlue.b = 255;
+	lightBlue.g = 191;
+
+	lightGreen.r = 173;
+	lightGreen.g = 255;
+	lightGreen.b = 47;
+
+	lightRed.r = 255;
+	lightRed.g = 105;
+	lightRed.b = 180;
+
+	ColorType brown;
+	brown.r = 139;
+	brown.g = 69;
+	brown.b = 19;
+
+
+	cout << "Generating Textures..." << endl;
 
 	//TEXTURE 1 is a checkerboard with black and white checkers.
 	//The first one is a red checker.  Top left.
@@ -56,6 +80,64 @@ void Demos::generateTextures()
 	}
 	writeTexture(texture2);
 
+
+	//Ok I'm gonna generate a skymap.  This should be fun.
+	//top is blue and white.
+	//bottom is green and brown.
+	//side 1 is red and lightred.
+	//side 2 is green and light green.
+	//side 3 is yellow and light yellow.
+	//side 4 is blue and lightblue.
+	cout << "Generating the Skybox..." << endl;
+
+	TextureType top, side1, side2, side3, side4, bottom;
+	top.dimension = 9;
+	top.textureFilename = "top.ppm";
+	bottom.dimension = 9;
+	bottom.textureFilename = "bottom.ppm";
+	side1.dimension = 9;
+	side1.textureFilename = "side1.ppm";
+	side2.dimension = 9;
+	side2.textureFilename = "side2.ppm";
+	side3.dimension = 9;
+	side3.textureFilename = "side3.ppm";
+	side4.dimension = 9;
+	side4.textureFilename = "side4.ppm";
+
+	//the first pixel is black for every side.  
+	top.pixelArray.push_back(black);
+	bottom.pixelArray.push_back(black);
+	side1.pixelArray.push_back(black);
+	side2.pixelArray.push_back(black);
+	side3.pixelArray.push_back(black);
+	side4.pixelArray.push_back(black);
+	for(int i = 0; i < 40; i++)
+	{
+		top.pixelArray.push_back(blue);
+		top.pixelArray.push_back(white);
+
+		bottom.pixelArray.push_back(green);
+		bottom.pixelArray.push_back(brown);
+
+		side1.pixelArray.push_back(red);
+		side1.pixelArray.push_back(lightRed);
+
+		side2.pixelArray.push_back(green);
+		side2.pixelArray.push_back(lightGreen);
+
+		side3.pixelArray.push_back(yellow);
+		side3.pixelArray.push_back(lightYellow);
+
+		side4.pixelArray.push_back(blue);
+		side4.pixelArray.push_back(lightBlue);
+	}
+
+	writeTexture(top);
+	writeTexture(bottom);
+	writeTexture(side1);
+	writeTexture(side2);
+	writeTexture(side3);
+	writeTexture(side4);
 
 }
 

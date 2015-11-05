@@ -1,42 +1,91 @@
-eye  0.0 5.0 10.0
-viewdir  0.0 -2.0 -10.0
+# camera setup
+eye  90 90 90
+viewdir  -1 -1 -1
 updir  0.0 1.0 0.0
-fovh  90.0
-imsize  400 400
-light 0.0 8.0 0.0 1 1.0 1.0 1.0
+fovh  90
+imsize  600 600
+light 0 0 0 1 1.0 1.0 1.0
 bkgcolor .8 .8 .9
 
-mtlcolor  1.0 1.0 0.0 1.0 1.0 1.0 0.3 0.3 0.4 10
-sphere  0.0 9.0 0.0 0.5
+# Center Sphere.
+mtlcolor  1.0 1.0 0.0 .7 .7 .7 0.3 0.3 0.4 5
+# sphfffsdfere  0.0 0.0 0.0 0.5
 
+# skybox vertices
+v -100 -100 -100
+v -100 -100 100
+v -100 100 -100
+v -100 100 100
+v 100 -100 -100
+v 100 -100 100
+v 100 100 -100
+v 100 100 100
 
-mtlcolor  1.0 0.0 0.0 1.0 1.0 1.0 0.3 0.3 0.4 10
-sphere  -10.0 0.0 0.0 3.0
-mtlcolor  0.0 1.0 0.0 1.0 1.0 1.0 0.3 0.3 0.4 10
-sphere  -5.0 5.0 0.0 1.0
-
-texture texture1.ppm
-sphere  0.0 0.0 0.0 3.0
-sphere  0.0 5.0 0.0 1.0
-
-v -6 -6 0
-v 6 -6 0
-v 6 6 0
-v -6 6 0
+# texture coordinates.
 vt 1 0
 vt 1 1
 vt 0 1
 vt 0 0
-vn 0 0 1
-vn 0 0 1
-vn 0 0 1
-vn 0 0 1
-f 1/1/1 2/2/2 3/3/3
-f 1/1/1 3/3/3 4/4/4
 
-texture texture2.ppm
-sphere  10.0 0.0 0.0 3.0
-sphere  5.0 5.0 0.0 1.0
+# normals for the face.
+vn 1 0 0
+vn -1 0 0
+vn 0 1 0
+vn 0 -1 0
+vn 0 0 1
+vn 0 0 -1
+
+# bottom. -y. all vertices should have y = -100. 
+# vertices 1,2,5,6
+# Triangles = 5-2-1,5-6-2
+# Clockwise:
+# v1 = -100,,-100 
+# v2 = -100,,100
+# v5 = 100,,-100 
+# v6 = 100,,100
+
+texture bottom.ppm
+f 5/1/3 2/3/3 1/4/3
+f 5/1/3 6/2/3 2/3/3
+
+# top.  +y.  all vertices should have y = 100. 
+texture top.ppm
+f 7/1/4 4/3/4 3/4/4
+f 7/1/4 8/2/4 4/3/4
+
+# side 1.  + z.
+# vertices 2,4,6,8
+# traingles 6,4,2 ; 6,8,4
+texture side1.ppm
+f 6/1/6 4/3/6 2/4/6
+f 6/1/6 8/2/6 4/3/6
+
+# side 2.  + x.
+# vertices 5,6,7,8
+# traingles 7,6,5 ; 7,8,6
+texture side2.ppm
+f 7/1/2 6/3/2 5/4/2
+f 7/1/2 8/2/2 6/3/2
+
+# side 3.  - z.
+# vertices 1,3,5,7
+# traingles 5,3,1 ; 5,7,3
+texture side3.ppm
+f 5/1/5 3/3/5 1/4/5
+f 5/1/5 7/2/5 3/3/5
+
+# side 4.  - x.
+# vertices 1,2,3,4
+# traingles 3,2,1 ; 3,4,2
+texture side4.ppm
+f 3/1/1 2/3/1 1/4/1
+f 3/1/1 4/2/1 2/3/1
+
+
+
+
+
+
 
 
 

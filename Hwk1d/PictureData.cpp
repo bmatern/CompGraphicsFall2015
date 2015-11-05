@@ -85,7 +85,8 @@ void PictureData::loadSceneInformation()
 		while ( getline (myInputfile,line) )
 	    {
 	    	//cout << "Line:" << line << "\n";
-	    	if(line.length() > 0)
+	    	//Check for comments in this line.
+	    	if(line.length() > 0 && line.at(0) != '#')
 	    	{
 	    		    	
 				vector<string> tokens = Common::tokenizeString(line, " ");
@@ -685,6 +686,7 @@ ColorType PictureData::traceRay(int x, int y)
 
 bool PictureData::isShaded(PointType origin, VectorType L, LightType light)
 {
+
 	//L is the vector TOWARDS the light source.
 	RayType shadowRay;
 	shadowRay.origin = origin;
@@ -825,6 +827,9 @@ double PictureData::phongLighting(int colorIndex, MaterialType material,  Vector
 					* lightIntensity
 					* (N.dotProduct(L)));
 
+			//For debugging.....
+			//currentDiffuse = 0;
+
 			//Find the max diffuse color component.
 			diffuseComponent = (currentDiffuse > diffuseComponent) ? currentDiffuse : diffuseComponent;
 			//diffuseComponent = Common::clamp(currentDiffuse + diffuseComponent);
@@ -842,6 +847,10 @@ double PictureData::phongLighting(int colorIndex, MaterialType material,  Vector
 					* lightIntensity
 					* (pow(N.dotProduct(H),material.n))
 					);
+
+			//TODO: THERE IS A BUG WITH SPECULAR LIGHTING.  IGNORING IT FOR NOW.
+			//THIS STATEMENT SHOULDN"T BE HERE:
+			//currentSpecular = 0;
 
 			specularComponent = (currentSpecular > specularComponent) ? currentSpecular : specularComponent;
 			//specularComponent = Common::clamp(currentSpecular + specularComponent);
