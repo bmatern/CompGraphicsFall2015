@@ -4,12 +4,15 @@ viewdir  -1 -1 -1
 updir  0.0 1.0 0.0
 fovh  90
 imsize  600 600
-light 0 0 0 1 1.0 1.0 1.0
+light 0 75 0 1 1.0 1.0 1.0
 bkgcolor .8 .8 .9
 
 # Center Sphere.
 mtlcolor  1.0 1.0 0.0 .7 .7 .7 0.3 0.3 0.4 5
-# sphfffsdfere  0.0 0.0 0.0 0.5
+sphere  0.0 80 0.0 2
+
+mtlcolor  0.0 1.0 1.0 .7 .7 .7 0.3 0.3 0.4 5
+sphere  0.0 0.0 0.0 10
 
 # skybox vertices
 v -100 -100 -100

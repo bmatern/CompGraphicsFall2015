@@ -76,7 +76,7 @@ void PictureData::loadSceneInformation()
 	isParallel = false;
 
 	//read input file to determine the components of the scene.
-	string line;
+	string line = "";
 	ifstream myInputfile (inputFileName);
 	//cout << "About to open file:" <<inputFileName << endl;
 	if (myInputfile.is_open())
@@ -190,7 +190,7 @@ void PictureData::loadSceneInformation()
 						//materials.push_back(currentMaterial);
 						
 						//currentMaterial.loadTexture();
-						cout<<"Texture file name detected: " << tokens[1] << endl;		
+						//cout<<"Texture file name detected: " << tokens[1] << endl;		
 					}
 					else if(inputVarName.compare("sphere") == 0)
 					{
@@ -259,6 +259,7 @@ void PictureData::loadSceneInformation()
 						vn.x = stod(tokens[1]);
 						vn.y = stod(tokens[2]);
 						vn.z = stod(tokens[3]);
+						vn = vn.normalizeVector();
 						vertexNormals.push_back(vn);
 					}
 					else if(inputVarName.compare("f") == 0)
@@ -774,6 +775,11 @@ double PictureData::phongLighting(int colorIndex, MaterialType material,  Vector
 
 	//colorIndex should be 0,1,2 corresponding with r,g,b
 	//think of a better way to do that.
+
+	//V = V.normalizeVector();
+	//cout << "N:" << N.x << "," << N.y << ","<< N.z << endl;
+	N = N.normalizeVector();
+	//cout << "N:" << N.x << "," << N.y << ","<< N.z << endl;
 	
 
 	double colorValue = (colorIndex==0) ? material.color.r 
@@ -789,10 +795,10 @@ double PictureData::phongLighting(int colorIndex, MaterialType material,  Vector
 	double ambientComponent = colorValue * material.ka;
 
 	//kd Odλ(N ⋅L)	
-	double diffuseComponent;
+	double diffuseComponent = 0;
 
 	//ks Osλ (N ⋅H)^n
-	double specularComponent;
+	double specularComponent = 0;
 
 	//Get the max diffuse and specular for each light source.
 	for(int i = 0; i < lights.size(); i++)
