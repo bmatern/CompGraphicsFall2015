@@ -34,6 +34,9 @@ class MaterialType
 	//maybe 2 -> 100
 	int n;
 
+	double opacity;
+
+	double indexOfRefraction;
 
 
 };

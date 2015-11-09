@@ -24,6 +24,9 @@ void runDemos()
 
 int main( int argc, char *argv[] )
 {
+	
+
+
 	cout << "Creating a new image.\n";
 
 //Read commandline args to get the input file name.

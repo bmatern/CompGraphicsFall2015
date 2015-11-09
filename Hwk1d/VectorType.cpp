@@ -62,6 +62,18 @@ VectorType VectorType::addVectors(VectorType secondVector)
 	return results;
 }
 
+double VectorType::angleBetweenVectors(VectorType secondVector)
+{
+	//cos(theta) = (u . v) / (|u|*|v|
+	double theta = acos(dotProduct(secondVector)
+		/
+		(vectorLength() * secondVector.vectorLength())
+
+		);
+	
+	return theta;
+}
+
 /*VectorType VectorType::addVectors(PointType originPoint)
 {
 	//If we need to add a vector to a point.

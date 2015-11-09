@@ -14,6 +14,7 @@ class VectorType
 	VectorType normalizeVector();
 	VectorType multiplyVector(double scalar);
 	VectorType addVectors(VectorType);
+	double angleBetweenVectors(VectorType);
 };
 
 #endif

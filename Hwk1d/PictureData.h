@@ -79,15 +79,18 @@ class PictureData
 
 	void loadSceneInformation();
 	void setViewingWindow();
-	ColorType traceRay(int x, int y);
-	ColorType shadeRay(SphereType sphere, RayType tracedRay, PointType intersectPoint);
-	ColorType shadeRay(FaceType face, RayType tracedRay, PointType intersectPoint);
+	ColorType traceRay(RayType rayToTrace, int recursionDepth);
+	//ColorType shadeRay(SphereType sphere, RayType tracedRay, PointType intersectPoint);
+	ColorType shadeRay(MaterialType, RayType tracedRay, PointType intersectPoint, VectorType N, VectorType V, int recursionDepth);
+	//ColorType shadeRay(FaceType face, RayType tracedRay, PointType intersectPoint);
 	bool isShaded(PointType origin, VectorType L, LightType light);
 	void traceRays();
-	double phongLighting(int colorIndex, MaterialType material, VectorType N, VectorType V, PointType intersectPoint);
+	double phongLighting(int colorIndex, MaterialType material, VectorType N, VectorType V, PointType intersectPoint, ColorType reflectedColor);
+
+	VectorType calculateN(FaceType face, PointType intersectPoint);
 
 	ColorType assignTextureColor(SphereType sphere, PointType intersectPoint, VectorType N);
-	ColorType assignTextureColor(FaceType inputSphere, PointType intersectPoint, VectorType N, double alpha, double beta, double gamma);
+	ColorType assignTextureColor(FaceType face, PointType intersectPoint, VectorType N);
 };
 
 #endif

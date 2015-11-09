@@ -3,16 +3,19 @@ eye  90 90 90
 viewdir  -1 -1 -1
 updir  0.0 1.0 0.0
 fovh  90
-imsize  600 600
+imsize  500 500
 light 0 75 0 1 1.0 1.0 1.0
 bkgcolor .8 .8 .9
 
-# Center Sphere.
-mtlcolor  1.0 1.0 0.0 .7 .7 .7 0.3 0.3 0.4 5
-sphere  0.0 80 0.0 2
 
-mtlcolor  0.0 1.0 1.0 .7 .7 .7 0.3 0.3 0.4 5
-sphere  0.0 0.0 0.0 10
+
+# Center Sphere.
+mtlcolor  1 1 1  1 1 1  0 0 0.9  20  1 .2
+sphere  0.0 0.0 0.0 30
+
+#The sun
+mtlcolor  1.0 1.0 0.0 .9 .7 .7 0.3 0.3 0.0001 20 1 1
+sphere  0.0 80 0.0 2
 
 # skybox vertices
 v -100 -100 -100

@@ -165,6 +165,12 @@ void PictureData::loadSceneInformation()
 
 						currentMaterial.n = stod(tokens[10]);
 
+						currentMaterial.opacity = stod(tokens[11]);
+						currentMaterial.indexOfRefraction = stod(tokens[12]);
+
+						cout << "opacity:" << currentMaterial.opacity << endl;
+						cout << "indexOfRefraction:" << currentMaterial.indexOfRefraction << endl;
+
 						//currentMaterial.hasTexture = false;
 						//texture index of -1 means it's a solid color.
 						currentMaterial.textureIndex = -1;
@@ -551,33 +557,14 @@ void PictureData::setViewingWindow()
 	pixelArray = vector<ColorType>(width*height);
 }
 
-ColorType PictureData::traceRay(int x, int y)
+ColorType PictureData::traceRay(RayType rayToTrace, int recursionDepth)
 {
 	//cout <<"Starting traceRay" << x << "," << y << endl;
 	//default to background color.  Switch to sphere color if ray intersects it.
 	ColorType results = bgColor;	
 	//This is the mapping to the world coordinate point.
 	//topleft + deltaH*x + deltaV * y
-	PointType worldCoordinatesPoint = 
-		Common::getPointFromVector(
-		Common::getVectorFromPoint(viewingWindow.topLeft).addVectors(
-		deltaH.multiplyVector(x)).addVectors(
-		deltaV.multiplyVector(y)));
-		
-	//cout << "World Coordinates Point:" << worldCoordin
-	RayType rayToTrace;
-	if(isParallel)
-	{
-		//If it's parallel, we start the ray at the spot in our viewing window.
-		rayToTrace.origin = worldCoordinatesPoint;
-		rayToTrace.direction = eyeRay.direction.normalizeVector();
 
-	}
-	else
-	{
-		rayToTrace.origin = eyeRay.origin;
-		rayToTrace.direction = Common::vectorFromHereToPoint(rayToTrace.origin,worldCoordinatesPoint).normalizeVector();
-	}
 
 			//cout << "rayToTrace" << rayToTrace.origin.x << "," << rayToTrace.origin.y << "," << rayToTrace.origin.z << ";" <<
 			//rayToTrace.direction.x << "," << rayToTrace.direction.y << "," << rayToTrace.direction.z << endl;
@@ -626,61 +613,95 @@ ColorType PictureData::traceRay(int x, int y)
 		cout << "sphereDistance:" << intersectSphereDistance << endl;
 	}*/
 
+	//I'm gonna use this int here to decide if we hit a sphere or face.
+	//probably should use a enum or something.
+	//0 means no interaction.  1 means a sphere.  2 means intersected a face first.
+	int intersectionID= 0;
 	//this is kind of a clusterfrick.  I should clean this up.
 	if(intersectSphereDistance != -1)
 	{
-		//We intersected a sphere.
+		//We intersected a sphere.  Maybe a face too.
 		if(intersectFaceDistance != -1)
 		{
 			//we intersected a face too.
 			if(intersectFaceDistance < intersectSphereDistance)
 			{
+				intersectionID = 2;
 				//Face is closer.  Render the face.
 				//We hit a face, not a sphere.
-				//PointType intersectPoint = Common::getPointFromVector(
-				//	rayToTrace.direction.multiplyVector(intersectSphereDistance)
-				//	.addVectors(Common::getVectorFromPoint(rayToTrace.origin)));
-				//results = shadeRay(spheres[intersectSphereIndex], rayToTrace, intersectPoint);
-				PointType intersectPoint = Common::getPointFromVector(
-					rayToTrace.direction.multiplyVector(intersectFaceDistance)
-					.addVectors(Common::getVectorFromPoint(rayToTrace.origin)));
-				results = shadeRay(faces[intersectFaceIndex], rayToTrace, intersectPoint);
 			}
 			else
 			{
-				//we hit a sphere, not a face.
-				PointType intersectPoint = Common::getPointFromVector(
-					rayToTrace.direction.multiplyVector(intersectSphereDistance)
-					.addVectors(Common::getVectorFromPoint(rayToTrace.origin)));
-				results = shadeRay(spheres[intersectSphereIndex], rayToTrace, intersectPoint);
-				//sphere is close.  render the sphere.
+				intersectionID = 1;
+				//we hit a sphere, but not a face.
 			}
-
 		}
 		else
 		{
+			intersectionID = 1;
 			//We just intersected a sphere.  Render hte sphere.
 			//we hit a sphere, not a face.
-			PointType intersectPoint = Common::getPointFromVector(
-				rayToTrace.direction.multiplyVector(intersectSphereDistance)
-				.addVectors(Common::getVectorFromPoint(rayToTrace.origin)));
-			results = shadeRay(spheres[intersectSphereIndex], rayToTrace, intersectPoint);
-			//sphere is close.  render the sphere.
-
 		}
 	}
 	else if(intersectFaceDistance != -1)
 	{
+		intersectionID = 2;
 		//We interected a face, not a sphere.
-		PointType intersectPoint = Common::getPointFromVector(
-			rayToTrace.direction.multiplyVector(intersectFaceDistance)
-			.addVectors(Common::getVectorFromPoint(rayToTrace.origin)));
-		results = shadeRay(faces[intersectFaceIndex], rayToTrace, intersectPoint);
 	}
 	else
 	{
+		//NOTHING.
+	}
+
+	if(intersectionID == 1)
+	{
+		//intersect a sphere.
+		SphereType sphere = spheres[intersectSphereIndex];
+
+
+		PointType intersectPoint = Common::getPointFromVector(
+			rayToTrace.direction.multiplyVector(intersectSphereDistance)
+			.addVectors(Common::getVectorFromPoint(rayToTrace.origin)));
+
+		VectorType N = Common::vectorFromHereToPoint(sphere.center,intersectPoint).normalizeVector();
+		//V is the unit vector towards the viewer
+		//VectorType V = eyeRay.direction.multiplyVector(-1.0).normalizeVector();
+		VectorType V = Common::vectorFromHereToPoint(intersectPoint,eyeRay.origin).normalizeVector();
+		sphere.material.color = assignTextureColor(sphere, intersectPoint,N);
+
+
+
+
+		results = shadeRay(spheres[intersectSphereIndex].material, rayToTrace, intersectPoint,N,V,recursionDepth);
+
+	}
+	else if(intersectionID == 2)
+	{
+		FaceType face = faces[intersectFaceIndex];
+		//Intersect a face.
+		PointType intersectPoint = Common::getPointFromVector(
+			rayToTrace.direction.multiplyVector(intersectFaceDistance)
+			.addVectors(Common::getVectorFromPoint(rayToTrace.origin)));
+
+		VectorType N = calculateN(face, intersectPoint);
+
+	
+		//V is the unit vector towards the viewer
+			//VectorType V = eyeRay.direction.multiplyVector(-1.0).normalizeVector();
+		VectorType V = Common::vectorFromHereToPoint(intersectPoint,eyeRay.origin).normalizeVector();
+
+		//Assign it's color.
+		//This method will return the flat color if it doesn't have a texture.
+		face.material.color = assignTextureColor(face, intersectPoint,N);
+
+		results = shadeRay(face.material, rayToTrace, intersectPoint,N,V,recursionDepth);
+	}
+	else 
+	{
 		//cout << "no intersections at all, returning bacground color" << endl;
 	}
+
+
 
 	return results;
 }
@@ -754,7 +775,7 @@ bool PictureData::isShaded(PointType origin, VectorType L, LightType light)
 	return false;
 }
 
-double PictureData::phongLighting(int colorIndex, MaterialType material,  VectorType N, VectorType V, PointType intersectPoint)
+double PictureData::phongLighting(int colorIndex, MaterialType material,  VectorType N, VectorType V, PointType intersectPoint, ColorType reflectedColor)
 {
 	//The basic Phong illumination equation:
 	//Iλ = ka Odλ + kd Odλ(N ⋅L)+ ks Osλ (N ⋅H)^n
@@ -799,6 +820,15 @@ double PictureData::phongLighting(int colorIndex, MaterialType material,  Vector
 
 	//ks Osλ (N ⋅H)^n
 	double specularComponent = 0;
+
+	double reflectedComponent = 
+		//Common::clamp(
+
+				(colorIndex==0) ? material.ks * reflectedColor.r 
+					: (colorIndex==1) ? material.ks * reflectedColor.g 
+					: material.ks * reflectedColor.b
+		//)
+		;
 
 	//Get the max diffuse and specular for each light source.
 	for(int i = 0; i < lights.size(); i++)
@@ -854,8 +884,7 @@ double PictureData::phongLighting(int colorIndex, MaterialType material,  Vector
 					* (pow(N.dotProduct(H),material.n))
 					);
 
-			//TODO: THERE IS A BUG WITH SPECULAR LIGHTING.  IGNORING IT FOR NOW.
-			//THIS STATEMENT SHOULDN"T BE HERE:
+			//Set specular to 0 for debugging:
 			//currentSpecular = 0;
 
 			specularComponent = (currentSpecular > specularComponent) ? currentSpecular : specularComponent;
@@ -863,18 +892,17 @@ double PictureData::phongLighting(int colorIndex, MaterialType material,  Vector
 		}
 	}
 
-	return ambientComponent
+	return //Common::clamp(
+		ambientComponent
 		+ diffuseComponent
 		+ specularComponent
+		+ reflectedComponent
+		//)
 		;
 }
 
-ColorType PictureData::shadeRay(FaceType face, RayType tracedRay, PointType intersectPoint)
+VectorType PictureData::calculateN(FaceType face, PointType intersectPoint)
 {
-	ColorType results;
-
-	//VectorType N = Common::vectorFromHereToPoint(sphere.center,intersectPoint).normalizeVector();
-
 	VectorType nPrime = face.e1.crossProduct(face.e2);//.normalize();
 	double totalArea = nPrime.vectorLength() / 2;
 	VectorType centerV1 = Common::vectorFromHereToPoint(intersectPoint, face.v1);
@@ -903,77 +931,100 @@ ColorType PictureData::shadeRay(FaceType face, RayType tracedRay, PointType inte
 		.addVectors(face.vn2.multiplyVector(beta))
 		.addVectors(face.vn3.multiplyVector(alpha))
 		).normalizeVector();
-	//V is the unit vector towards the viewer
-	//VectorType V = eyeRay.direction.multiplyVector(-1.0).normalizeVector();
-	VectorType V = Common::vectorFromHereToPoint(intersectPoint,eyeRay.origin).normalizeVector();
 
-	//Assign it's color.
-	//This method will return the flat color if it doesn't have a texture.
-	face.material.color = assignTextureColor(face, intersectPoint,N, alpha, beta, gamma);
-
-	results.r = phongLighting(0
-		, face.material
-		//, materials[sphere.materialIndex]
-		//, sphere.materialIndex
-		, N, V
-		, intersectPoint
-		);
-
-	results.g = phongLighting(1
-		, face.material
-		//, materials[sphere.materialIndex]
-		//, sphere.materialIndex
-		, N, V
-		, intersectPoint
-		);
-
-	results.b = phongLighting(2
-		, face.material
-		//, materials[sphere.materialIndex]
-		//, sphere.materialIndex
-		, N, V
-		, intersectPoint
-		);
-
-	return results;
+	return N;
 }
 
-ColorType PictureData::shadeRay(SphereType sphere, RayType tracedRay, PointType intersectPoint)
-{
-	ColorType results;
 
-	VectorType N = Common::vectorFromHereToPoint(sphere.center,intersectPoint).normalizeVector();
+
+ColorType PictureData::shadeRay(MaterialType material, RayType tracedRay, PointType intersectPoint, VectorType N, VectorType V, int recursionDepth)
+{
+	ColorType results = bgColor;
+
+	//VectorType N = Common::vectorFromHereToPoint(sphere.center,intersectPoint).normalizeVector();
 	//V is the unit vector towards the viewer
 	//VectorType V = eyeRay.direction.multiplyVector(-1.0).normalizeVector();
-	VectorType V = Common::vectorFromHereToPoint(intersectPoint,eyeRay.origin).normalizeVector();
+	//VectorType V = Common::vectorFromHereToPoint(intersectPoint,eyeRay.origin).normalizeVector();
 
-	//Assign it's color.
-	//This method will return the flat color if it doesn't have a texture.
-	sphere.material.color = assignTextureColor(sphere, intersectPoint,N);
 
+	// Calculate Reflected Light.
+	// Fr = F0 + (1 – F0)(1 – cosθi)^5 
+	// cosθi = I ⋅ N 
+	// F0 is the reflectivity when I = N
+	// I = Incident Ray.  It's opposite of incoming ray.  I normali
+	// R = Reflected Ray
+	// R = A + S
+	// N = Normal
+	// I + S = A
+	// 
+
+	ColorType reflectedLight;
+	reflectedLight.r = 0;
+	reflectedLight.g = 0;
+	reflectedLight.b = 0;
+
+	if(recursionDepth <= 2)
+	{
+		double reflectivity = material.ks;
+		VectorType I, A, S;
+		I = tracedRay.direction.multiplyVector(-1).normalizeVector();
+
+		double a = N.dotProduct(I);
+
+		//R = A + S = (a* N) + (a*N - I) 
+		// = 2(aN) - I
+		VectorType R = N.multiplyVector(a).multiplyVector(2)
+			.addVectors(I.multiplyVector(-1));
+
+		RayType recurseRayToTrace;
+		recurseRayToTrace.origin = intersectPoint;
+		recurseRayToTrace.direction = R;
+
+
+		reflectedLight = traceRay(recurseRayToTrace, recursionDepth + 1);
+
+
+		//double thetaI = I.angleBetweenVectors(N);
+		//S = (I . N) * (N) - I
+		//S = (I.dotProduct(N));
+
+		//double Fr = reflectivity + (1 = reflectivity) * (pow(1-cos(),5));
+
+
+	}
+
+
+
+
+	
 	results.r = phongLighting(0
-		, sphere.material
+		, material
 		//, materials[sphere.materialIndex]
 		//, sphere.materialIndex
 		, N, V
 		, intersectPoint
+		, reflectedLight
 		);
 
 	results.g = phongLighting(1
-		, sphere.material
+		, material
 		//, materials[sphere.materialIndex]
 		//, sphere.materialIndex
 		, N, V
 		, intersectPoint
+		, reflectedLight
 		);
 
 	results.b = phongLighting(2
-		, sphere.material
+		, material
 		//, materials[sphere.materialIndex]
 		//, sphere.materialIndex
 		, N, V
 		, intersectPoint
+		, reflectedLight
 		);
+
+
 
 	return results;
 }
@@ -1053,15 +1104,36 @@ ColorType PictureData::assignTextureColor(SphereType inputSphere, PointType inte
 	}
 }
 
-ColorType PictureData::assignTextureColor(FaceType inputFace, PointType intersectPoint, VectorType N, double alpha, double beta, double gamma)
+ColorType PictureData::assignTextureColor(FaceType face, PointType intersectPoint, VectorType N)
 {
+	VectorType nPrime = face.e1.crossProduct(face.e2);//.normalize();
+	double totalArea = nPrime.vectorLength() / 2;
+	VectorType centerV1 = Common::vectorFromHereToPoint(intersectPoint, face.v1);
+	VectorType centerV2 = Common::vectorFromHereToPoint(intersectPoint, face.v2);
+	VectorType centerV3 = Common::vectorFromHereToPoint(intersectPoint, face.v3);
+	double areaA = centerV1
+		.crossProduct(centerV2).vectorLength()/2;
+	double areaB = centerV1
+		.crossProduct(centerV3).vectorLength()/2;
+	double areaC = centerV2
+		.crossProduct(centerV3).vectorLength()/2;
+
+	//the alpha/beta/gamma are areas, they should coorespond with the point opposite it 
+	//in the triangle.
+	//alpha : v1 and v2, mult by v3
+	//beta : v1 and v3, mult by v2
+	//gamma : v2 and v3, mult by v1.
+
+	double alpha = areaA / totalArea;
+	double beta = areaB / totalArea;
+	double gamma = areaC / totalArea;
 	//cout << "Assigning Texture Color" << endl;
 	cout << flush ;
-	if(inputFace.material.textureIndex == -1)
+	if(face.material.textureIndex == -1)
 	{
 		//No texture.
 		//return flat color
-		return inputFace.material.color;
+		return face.material.color;
 	}
 	else
 	{
@@ -1069,8 +1141,8 @@ ColorType PictureData::assignTextureColor(FaceType inputFace, PointType intersec
 		//v = α*v0+β*v1+γ*v2
 		//double u = (alpha * inputFace.vt1.u) + (beta * inputFace.vt2.u) + (gamma * inputFace.vt3.u);
 		//I think this one is right.
-		double u = (alpha * inputFace.vt3.u) + (beta * inputFace.vt2.u) + (gamma * inputFace.vt1.u);
-		double v = (alpha * inputFace.vt3.v) + (beta * inputFace.vt2.v) + (gamma * inputFace.vt1.v);
+		double u = (alpha * face.vt3.u) + (beta * face.vt2.u) + (gamma * face.vt1.u);
+		double v = (alpha * face.vt3.v) + (beta * face.vt2.v) + (gamma * face.vt1.v);
 
 
 		if(v < 0.0 || v > 1.0 || u < 0.0 || u > 1.0)
@@ -1082,13 +1154,13 @@ ColorType PictureData::assignTextureColor(FaceType inputFace, PointType intersec
 			//	cout << "good.";
 		}
 
-		int textureDimension = textures[inputFace.material.textureIndex].dimension;
+		int textureDimension = textures[face.material.textureIndex].dimension;
 		int x = floor(u * textureDimension);
 		int y = floor(v * textureDimension);
 		
 
 		int vectorIndex = y + textureDimension * x;
-		return textures[inputFace.material.textureIndex].pixelArray[vectorIndex];
+		return textures[face.material.textureIndex].pixelArray[vectorIndex];
 
 	}
 }
@@ -1105,7 +1177,30 @@ void PictureData::traceRays()
 		//cout << "height:" << y << "/" << height << endl;
 		for(int x = 0; x < width; x++)
 		{
-			pixelArray [ x + y*width ] = traceRay(x, y);
+			PointType worldCoordinatesPoint = 
+				Common::getPointFromVector(
+				Common::getVectorFromPoint(viewingWindow.topLeft).addVectors(
+				deltaH.multiplyVector(x)).addVectors(
+				deltaV.multiplyVector(y)));
+				
+			//cout << "World Coordinates Point:" << worldCoordin
+
+			RayType rayToTrace;
+
+			if(isParallel)
+			{
+				//If it's parallel, we start the ray at the spot in our viewing window.
+				rayToTrace.origin = worldCoordinatesPoint;
+				rayToTrace.direction = eyeRay.direction.normalizeVector();
+
+			}
+			else
+			{
+				rayToTrace.origin = eyeRay.origin;
+				rayToTrace.direction = Common::vectorFromHereToPoint(rayToTrace.origin,worldCoordinatesPoint).normalizeVector();
+			}
+
+			pixelArray [ x + y*width ] = traceRay(rayToTrace, 1);
 		}
 	}
 }

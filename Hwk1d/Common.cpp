@@ -357,7 +357,8 @@ bool Common::thresholdEquals(double a, double b)
 	//which means a and b are close enough to be considered equal.
 	//Pick a small epsilon as a threshold
 	//I apparenlty arbitrarily chose 10^-6
-	double epsilon = .000001;
+	//double epsilon = .000001;
+	double epsilon = .001;
 	double comparison = (a>b)?a-b:b-a;
 	//cout << "Attempting a comparison,a,b: " <<comparison<<","<< a << "," << b << endl;
 	return (comparison < epsilon);

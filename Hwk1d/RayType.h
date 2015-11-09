@@ -9,6 +9,8 @@
 class RayType
 {
 	public:
+	//bool insideObject;
+		//
 	PointType origin;
 	VectorType direction;
 };
