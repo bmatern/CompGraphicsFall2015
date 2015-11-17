@@ -168,8 +168,8 @@ void PictureData::loadSceneInformation()
 						currentMaterial.opacity = stod(tokens[11]);
 						currentMaterial.indexOfRefraction = stod(tokens[12]);
 
-						cout << "opacity:" << currentMaterial.opacity << endl;
-						cout << "indexOfRefraction:" << currentMaterial.indexOfRefraction << endl;
+						//cout << "opacity:" << currentMaterial.opacity << endl;
+						//cout << "indexOfRefraction:" << currentMaterial.indexOfRefraction << endl;
 
 						//currentMaterial.hasTexture = false;
 						//texture index of -1 means it's a solid color.
@@ -658,7 +658,6 @@ ColorType PictureData::traceRay(RayType rayToTrace, int recursionDepth)
 		//intersect a sphere.
 		SphereType sphere = spheres[intersectSphereIndex];
 
-
 		PointType intersectPoint = Common::getPointFromVector(
 			rayToTrace.direction.multiplyVector(intersectSphereDistance)
 			.addVectors(Common::getVectorFromPoint(rayToTrace.origin)));
@@ -669,11 +668,7 @@ ColorType PictureData::traceRay(RayType rayToTrace, int recursionDepth)
 		VectorType V = Common::vectorFromHereToPoint(intersectPoint,eyeRay.origin).normalizeVector();
 		sphere.material.color = assignTextureColor(sphere, intersectPoint,N);
 
-
-
-
 		results = shadeRay(spheres[intersectSphereIndex].material, rayToTrace, intersectPoint,N,V,recursionDepth);
-
 	}
 	else if(intersectionID == 2)
 	{
@@ -684,7 +679,6 @@ ColorType PictureData::traceRay(RayType rayToTrace, int recursionDepth)
 			.addVectors(Common::getVectorFromPoint(rayToTrace.origin)));
 
 		VectorType N = calculateN(face, intersectPoint);
-
 	
 		//V is the unit vector towards the viewer
 			//VectorType V = eyeRay.direction.multiplyVector(-1.0).normalizeVector();
@@ -700,8 +694,6 @@ ColorType PictureData::traceRay(RayType rayToTrace, int recursionDepth)
 	{
 		//cout << "no intersections at all, returning bacground color" << endl;
 	}
-
-
 
 	return results;
 }
@@ -775,7 +767,7 @@ bool PictureData::isShaded(PointType origin, VectorType L, LightType light)
 	return false;
 }
 
-double PictureData::phongLighting(int colorIndex, MaterialType material,  VectorType N, VectorType V, PointType intersectPoint, ColorType reflectedColor)
+double PictureData::phongLighting(int colorIndex, MaterialType material,  VectorType N, VectorType V, PointType intersectPoint, ColorType reflectedColor, ColorType transmittedColor)
 {
 	//The basic Phong illumination equation:
 	//Iλ = ka Odλ + kd Odλ(N ⋅L)+ ks Osλ (N ⋅H)^n
@@ -793,6 +785,8 @@ double PictureData::phongLighting(int colorIndex, MaterialType material,  Vector
 	//H = UNIT vector that represents the direction that is halfway between direction of light and direction to viewer.
 	//	equation is on p29
 	//Calculate specular and diffuse multiple times for different light sources.  Use the max.
+	//The V vector passed in here should be the Incidence vector, from camera to the object intersection.
+	//I would be the opposite of that.
 
 	//colorIndex should be 0,1,2 corresponding with r,g,b
 	//think of a better way to do that.
@@ -821,13 +815,68 @@ double PictureData::phongLighting(int colorIndex, MaterialType material,  Vector
 	//ks Osλ (N ⋅H)^n
 	double specularComponent = 0;
 
-	double reflectedComponent = 
-		//Common::clamp(
+	double reflectedComponent = 0;
 
-				(colorIndex==0) ? material.ks * reflectedColor.r 
-					: (colorIndex==1) ? material.ks * reflectedColor.g 
-					: material.ks * reflectedColor.b
-		//)
+	double transmittedComponent = 0;
+
+	//I'm calculating reflectivity based on the simplified Schlick equation.
+	//F0 = ((n1-n2)/(n1+n2))^2
+	//The n are indices of refraction.
+	//air is 1.
+
+	double n1 = 1;
+	double n2 = material.indexOfRefraction;
+	//shlickRefCof = the reflectance of light when N = V
+	double schlickRefCoef = pow( (n1-n2)/(n1+n2) ,2);
+	//reflectivity is R(theta) = R0 + (1 - R0)(1 - cos(theta))^5
+	//cos theta = N dot V
+	//Wait maybe cos theta = I dot N
+	//I should be the opposite of V I think.
+
+	VectorType I = V.multiplyVector(-1).normalizeVector();
+
+	double reflectivity = schlickRefCoef + 
+		(1 - schlickRefCoef) *
+		pow( ( 1 - N.dotProduct(V) ) ,5);
+		//pow( ( 1 - I.dotProduct(N) ) ,5);
+
+	//DEBUG.  This isn't right.
+	//reflectivity = material.ks;
+
+	reflectedComponent = 
+		Common::clamp(
+				(colorIndex==0) ? reflectivity * reflectedColor.r 
+					: (colorIndex==1) ? reflectivity * reflectedColor.g 
+					: reflectivity * reflectedColor.b
+		)
+		;
+
+	//transmitted Light should look like this.
+	//(1− Fr )⋅(e^−αλt)⋅Tλ
+	//t is the distance traveled....
+	//I gotta calculate that i guess?
+	//No wait, don't use that, use this instead:
+	//(1− Fr )⋅(1−α)⋅Tλ
+
+
+	/*double t = 30;
+	double transmittedLightCoefficient = 
+	(1-reflectivity) *
+	(exp( material.opacity * (-1) * (t)))
+	;*/
+
+	double transmittedLightCoefficient = 
+	(1-reflectivity) *
+	(1-material.opacity)
+	;
+	
+
+	transmittedComponent = 
+		Common::clamp(
+				(colorIndex==0) ? transmittedLightCoefficient * transmittedColor.r 
+					: (colorIndex==1) ? transmittedLightCoefficient * transmittedColor.g 
+					: transmittedLightCoefficient * transmittedColor.b
+		)
 		;
 
 	//Get the max diffuse and specular for each light source.
@@ -849,6 +898,16 @@ double PictureData::phongLighting(int colorIndex, MaterialType material,  Vector
 			L = Common::vectorFromHereToPoint(intersectPoint,currentLight.center).normalizeVector();
 		}
 
+		
+		//This is debugging.  Searching for overflow and underlfow in phong.
+		double NdotL = N.dotProduct(L);
+		if(NdotL<0)
+		{
+			//cout << "N dot L is less than 0:" << NdotL << endl;
+			NdotL = 0;
+		}
+
+
 
 		bool shadow = isShaded(intersectPoint, L, currentLight);
 
@@ -861,7 +920,7 @@ double PictureData::phongLighting(int colorIndex, MaterialType material,  Vector
 					colorValue 
 					* material.kd
 					* lightIntensity
-					* (N.dotProduct(L)));
+					* (NdotL));
 
 			//For debugging.....
 			//currentDiffuse = 0;
@@ -876,12 +935,21 @@ double PictureData::phongLighting(int colorIndex, MaterialType material,  Vector
 				).normalizeVector();
 			//H = H.multiplyVector(1.0/H.vectorLength());
 
+			//Debug a litlte here.  detecting underflow if N . H is less than 0.
+			double NdotH = N.dotProduct(H);
+
+			if(NdotH < 0)
+			{
+				//cout << "N dot H is less than 0:" << NdotH << endl;
+				NdotH = 0;
+			}
+
 			//ks Osλ (N ⋅H)^n
 			double currentSpecular = Common::clamp(
 					specularValue
 					* material.ks
 					* lightIntensity
-					* (pow(N.dotProduct(H),material.n))
+					* (pow(NdotH,material.n))
 					);
 
 			//Set specular to 0 for debugging:
@@ -892,12 +960,13 @@ double PictureData::phongLighting(int colorIndex, MaterialType material,  Vector
 		}
 	}
 
-	return //Common::clamp(
+	return Common::clamp(
 		ambientComponent
 		+ diffuseComponent
 		+ specularComponent
 		+ reflectedComponent
-		//)
+		+ transmittedComponent
+		)
 		;
 }
 
@@ -940,6 +1009,7 @@ VectorType PictureData::calculateN(FaceType face, PointType intersectPoint)
 ColorType PictureData::shadeRay(MaterialType material, RayType tracedRay, PointType intersectPoint, VectorType N, VectorType V, int recursionDepth)
 {
 	ColorType results = bgColor;
+	int maxRecursionDepth = 3;
 
 	//VectorType N = Common::vectorFromHereToPoint(sphere.center,intersectPoint).normalizeVector();
 	//V is the unit vector towards the viewer
@@ -956,47 +1026,106 @@ ColorType PictureData::shadeRay(MaterialType material, RayType tracedRay, PointT
 	// R = A + S
 	// N = Normal
 	// I + S = A
-	// 
 
-	ColorType reflectedLight;
+	ColorType reflectedLight = bgColor;
 	reflectedLight.r = 0;
 	reflectedLight.g = 0;
 	reflectedLight.b = 0;
 
-	if(recursionDepth <= 2)
-	{
-		double reflectivity = material.ks;
-		VectorType I, A, S;
-		I = tracedRay.direction.multiplyVector(-1).normalizeVector();
+	ColorType transmittedLight = bgColor;
+	transmittedLight.r = 0;
+	transmittedLight.g = 0;
+	transmittedLight.b = 0;
 
+
+	VectorType I = tracedRay.direction.multiplyVector(-1).normalizeVector();
+	//N = N.normalizeVector();
+	//cout << flush ;
+
+	//CALCULATE THE REFLECTED RAY
+	if(recursionDepth <= maxRecursionDepth)
+	{
+		//double reflectivity = material.ks;
+		//VectorType I, A, S;
+		//VectorType I = tracedRay.direction.multiplyVector(-1).normalizeVector();
+
+		//N = N.normalizeVector();
 		double a = N.dotProduct(I);
 
 		//R = A + S = (a* N) + (a*N - I) 
 		// = 2(aN) - I
 		VectorType R = N.multiplyVector(a).multiplyVector(2)
-			.addVectors(I.multiplyVector(-1));
+			.addVectors(I.multiplyVector(-1));//.normalize();
 
 		RayType recurseRayToTrace;
 		recurseRayToTrace.origin = intersectPoint;
 		recurseRayToTrace.direction = R;
-
+		recurseRayToTrace.insideObject = false;
 
 		reflectedLight = traceRay(recurseRayToTrace, recursionDepth + 1);
-
+		//reflectedLight = bgColor;
 
 		//double thetaI = I.angleBetweenVectors(N);
 		//S = (I . N) * (N) - I
 		//S = (I.dotProduct(N));
-
 		//double Fr = reflectivity + (1 = reflectivity) * (pow(1-cos(),5));
-
 
 	}
 
+	//CALCULATE THE TRANSMITTED RAY.
+	//Don't transmit the ray if alpha is 1.
+	//Because that means it's totally opaque.
+	if(recursionDepth <= maxRecursionDepth && !Common::thresholdEquals(material.opacity,1))
+	{
+		//Calculate thetaI, angle of incidence
+
+		//Snells law
+		// (sin θi / sin θt) = (ηtλ / ηiλ)
+
+		//index of refractions.
+		//"Traced Ray" is the ray that is intersecting the object.  
+		//If it's in air, ni is 1.
+		//If it's in an object, ni is the objects index of refaction.
+		//i = incidence, t = transmitted.
+		double ni = tracedRay.insideObject ? tracedRay.indexOfRefraction : 1;
+		double nt = tracedRay.insideObject ? 1 : tracedRay.indexOfRefraction;
+		
+		double NdotI = N.dotProduct(I);
+		if(NdotI < 0)
+		{
+			N = N.multiplyVector(-1).normalizeVector();
+			NdotI = N.dotProduct(I);
+		}
+
+		double thetaI = acos(N.dotProduct(I));
+
+		//T = (−N) sqrt ( 1− (ηi / ηt)^2 * (1− cos^2(θi))) + (ηi / ηt) * (cos(θi) * N - I )
 
 
+		VectorType T = (N.multiplyVector(-1)) 
+			.multiplyVector( sqrt(
+				1 - 
+				pow( ni/nt , 2 ) *
+				( 1 - pow( cos(thetaI) , 2 ) )
+			))
+			.addVectors(
+				N.multiplyVector(cos(thetaI))
+					.addVectors(I.multiplyVector(-1))
+						.multiplyVector(ni / nt)
+			);
 
-	
+		RayType recurseRayToTrace;
+		recurseRayToTrace.origin = intersectPoint;
+		recurseRayToTrace.direction = T;
+		recurseRayToTrace.insideObject = !tracedRay.insideObject;
+
+		transmittedLight = traceRay(recurseRayToTrace, recursionDepth + 1);
+			
+
+	}
+
+	//cout << flush ;
+
 	results.r = phongLighting(0
 		, material
 		//, materials[sphere.materialIndex]
@@ -1004,6 +1133,7 @@ ColorType PictureData::shadeRay(MaterialType material, RayType tracedRay, PointT
 		, N, V
 		, intersectPoint
 		, reflectedLight
+		, transmittedLight
 		);
 
 	results.g = phongLighting(1
@@ -1013,6 +1143,7 @@ ColorType PictureData::shadeRay(MaterialType material, RayType tracedRay, PointT
 		, N, V
 		, intersectPoint
 		, reflectedLight
+		, transmittedLight
 		);
 
 	results.b = phongLighting(2
@@ -1022,9 +1153,8 @@ ColorType PictureData::shadeRay(MaterialType material, RayType tracedRay, PointT
 		, N, V
 		, intersectPoint
 		, reflectedLight
+		, transmittedLight
 		);
-
-
 
 	return results;
 }
@@ -1128,7 +1258,7 @@ ColorType PictureData::assignTextureColor(FaceType face, PointType intersectPoin
 	double beta = areaB / totalArea;
 	double gamma = areaC / totalArea;
 	//cout << "Assigning Texture Color" << endl;
-	cout << flush ;
+	//cout << flush ;
 	if(face.material.textureIndex == -1)
 	{
 		//No texture.
@@ -1199,6 +1329,10 @@ void PictureData::traceRays()
 				rayToTrace.origin = eyeRay.origin;
 				rayToTrace.direction = Common::vectorFromHereToPoint(rayToTrace.origin,worldCoordinatesPoint).normalizeVector();
 			}
+
+			///assume ray starts in air.  So the index of refraction is 1.
+			rayToTrace.insideObject = false;
+			rayToTrace.indexOfRefraction = 1;
 
 			pixelArray [ x + y*width ] = traceRay(rayToTrace, 1);
 		}

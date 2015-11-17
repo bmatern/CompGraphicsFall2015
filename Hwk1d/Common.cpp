@@ -81,10 +81,19 @@ TextureType Common::loadTexture(string filename)
 	    	//Pull out the RGB values from the texture file.
 	    	for(int i = 0; i < tokenCount; i=i+3)
 	    	{
+
+
+	    		//Okay is this right?
+	    		//This way they're being read, it looks like it's big numbers.  Don't I need to divide by 255?
+
 	    		ColorType currentPixel;
-	    		currentPixel.r = stod(tokens[i]);
-	    		currentPixel.g = stod(tokens[i+1]);
-	    		currentPixel.b = stod(tokens[i+2]);
+	    		//currentPixel.r = stod(tokens[i]);
+	    		//currentPixel.g = stod(tokens[i+1]);
+	    		//currentPixel.b = stod(tokens[i+2]);
+
+	    		currentPixel.r = stod(tokens[i])/255;
+	    		currentPixel.g = stod(tokens[i+1])/255;
+	    		currentPixel.b = stod(tokens[i+2])/255;
 	    		
 	    		results.pixelArray.push_back(currentPixel);
 	    	}
@@ -100,7 +109,7 @@ TextureType Common::loadTexture(string filename)
     else
     {
     	cout << "Unable to open texture file.  \n";
-		//-cout << "width:" << width << "\nheight:" << height <<  "\n";
+		//cout << "width:" << width << "\nheight:" << height <<  "\n";
     }
 
     return results;
@@ -139,7 +148,12 @@ double Common::intersectSphere(RayType inputRay, SphereType inputSphere)
 		double t1 = (-B + sqrt(discriminant))/(2*A);
 		double t2 = (-B - sqrt(discriminant))/(2*A);
 		//t<0 means that the object is behind the eye.  Can't see it.
-		if(t1 < 0)
+		if(thresholdEquals(t1,0) || thresholdEquals(t2,0))
+		{
+			//This is a self-interaction.  Don't count this as an intersection.
+			return -1;
+		}
+		else if(t1 < 0)
 		{
 			return (t2<0) ? -1 : t2;
 		}

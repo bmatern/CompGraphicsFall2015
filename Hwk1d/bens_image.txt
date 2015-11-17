@@ -3,19 +3,47 @@ eye  90 90 90
 viewdir  -1 -1 -1
 updir  0.0 1.0 0.0
 fovh  90
-imsize  500 500
+imsize  1500 1500
+#imsize 500 500
 light 0 75 0 1 1.0 1.0 1.0
 bkgcolor .8 .8 .9
 
+# Reflective Spheres
+# I want this spheres to be a mirror finish.
+# last two on a material are for opacity and index of refraction.
+# When opacity is 1, surface is totally opaque.  Opacity is 0 means its transparent
+# Also if it's opaque, the index of refraction should be 1.
+# for a mirror, set the eta to 0
+
+mtlcolor  1 1 1  1 1 1  0 0 0.5  20  1 0
+sphere  -50 -80 50 20
+sphere  50 -80 -50 20
+sphere  -50 -80 -50 20
+sphere  50 -80 50 20
+sphere  0.0 -80 0.0 20
+
+#Transparent spheres
+#I want these ones to be transparent.
+#index of refraction is 1.333 like water
+# Diamond is around 2.4
+#opacity is 0? Is that right?  Clear.
+mtlcolor  1 1 1  1 1 1  0 0 .6  20  0.01  2
+sphere  -60 20 40 20
+sphere  50 20 -60 20
+sphere  -30 20 -70 20
+#sphere 70 80 90 20
 
 
-# Center Sphere.
-mtlcolor  1 1 1  1 1 1  0 0 0.9  20  1 .2
-sphere  0.0 0.0 0.0 30
+#LeftSphere
+mtlcolor  1 0 1 1 1 1 0.6 0.9 0.4 2 1 1
+sphere  0 83 -85 15
 
 #The sun
-mtlcolor  1.0 1.0 0.0 .9 .7 .7 0.3 0.3 0.0001 20 1 1
-sphere  0.0 80 0.0 2
+mtlcolor  1.0 1.0 1.0 1 1 1 0.75 0.5 0.3 20 1 1
+sphere  0.0 83 0.0 4
+
+# Material properties for the skybox triangles.
+mtlcolor  0 0 0 1 1 1 0.6 0.6 0.4 20 1 1
 
 # skybox vertices
 v -100 -100 -100
@@ -50,7 +78,9 @@ vn 0 0 -1
 # v5 = 100,,-100 
 # v6 = 100,,100
 
+# texture rainbow-stripes.ppm
 texture bottom.ppm
+# texture side1.ppm
 f 5/1/3 2/3/3 1/4/3
 f 5/1/3 6/2/3 2/3/3
 
@@ -84,6 +114,7 @@ f 5/1/5 7/2/5 3/3/5
 # vertices 1,2,3,4
 # traingles 3,2,1 ; 3,4,2
 texture side4.ppm
+# texture bottom.ppm
 f 3/1/1 2/3/1 1/4/1
 f 3/1/1 4/2/1 2/3/1
 

@@ -25,6 +25,8 @@ class PictureData
 {
 	public:
 
+
+
 	//This width and height are in pixels.
 	int width, height;
 	
@@ -85,7 +87,7 @@ class PictureData
 	//ColorType shadeRay(FaceType face, RayType tracedRay, PointType intersectPoint);
 	bool isShaded(PointType origin, VectorType L, LightType light);
 	void traceRays();
-	double phongLighting(int colorIndex, MaterialType material, VectorType N, VectorType V, PointType intersectPoint, ColorType reflectedColor);
+	double phongLighting(int colorIndex, MaterialType material, VectorType N, VectorType V, PointType intersectPoint, ColorType reflectedColor, ColorType transmittedColor);
 
 	VectorType calculateN(FaceType face, PointType intersectPoint);
 

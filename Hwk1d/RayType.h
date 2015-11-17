@@ -9,8 +9,11 @@
 class RayType
 {
 	public:
-	//bool insideObject;
-		//
+	//If the ray is inside an object, the object's index 
+	//of refraction can get stored here.
+	bool insideObject;
+	double indexOfRefraction;
+
 	PointType origin;
 	VectorType direction;
 };

@@ -3,7 +3,9 @@ g++ -o BenMaternHwk1 ColorType.cpp VectorType.cpp PictureData.cpp Demos.cpp Comm
 
 ./BenMaternHwk1
 ./BenMaternHwk1 bens_image.txt
-./BenMaternHwk1 bens_image_old.txt
+#./BenMaternHwk1 ray_inputX.txt
+#./BenMaternHwk1 ray_inputX2.txt
+# ./BenMaternHwk1 bens_image_old.txt
 #./BenMaternHwk1 bens_image2_parallel.txt
 #./BenMaternHwk1 bens_image2_perspective.txt
 #./BenMaternHwk1 adam.txt

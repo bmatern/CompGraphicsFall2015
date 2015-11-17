@@ -36,6 +36,10 @@ class MaterialType
 
 	double opacity;
 
+	//A material's fresnal reflectance is determined by the index of refraction of 
+	//the two surfaces.
+	//Air is 1.  Water is 1.333
+	//Diamond is 2.4
 	double indexOfRefraction;
 
 
